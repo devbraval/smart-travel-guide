@@ -1,0 +1,97 @@
+.login {
+    height: 100vh;
+    display: flex;
+    align-items: center; 
+    
+}
+
+.left-login{
+    width: 50%;
+    background: linear-gradient(135deg,#0073ff, #00c6ff);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    padding: 50px;
+    height: 100vh;
+}
+.left-login img{
+    width: 250px;
+    height: 250px;
+    margin-bottom: 20px;
+}
+.left-login h1{
+    font-size: 32px;
+    margin-bottom: 15px;
+}
+.left-login p{
+    font-size: 16px;
+    max-width: 420px;
+    opacity: 0.95;
+}
+
+.right-login{
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    
+}
+
+.login-box{
+    width: 100%;
+    max-width: 420px;
+    
+}
+
+@keyframes SlideFromLeft {
+    from{
+        transform: translateX(-60px);
+        opacity: 0;
+    }to{
+        transform: translate(0px);
+        opacity: 1;
+    }
+
+}
+.left-login{
+    animation: SlideFromLeft 1s ease-out forwards ;
+}
+@keyframes fadeUp {
+    from{
+        transform: translateY(40px);
+        opacity: 0;
+    }to{
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.right-login{
+    animation: fadeUp 1s ease-out forwards;
+    animation-delay: 0.1s;
+}
+
+.icon:hover{
+    cursor: pointer;
+}
+.icon{
+    margin-right: 10px;
+}
+.lower-box{
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    flex-direction: column;
+    align-items: center;
+}
+.btn{
+    background-color: #0073ff;
+}
+.btn:hover{
+    background-color: black;
+}
+

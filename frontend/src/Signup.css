@@ -1,0 +1,33 @@
+.sign-up {
+    height: 100vh;
+    display: flex;
+    align-items: center; 
+    
+}
+
+.left-signup{
+    width: 50%;
+    background: linear-gradient(135deg,#0073ff, #00c6ff);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    padding: 50px;
+    height: 100vh;
+}
+.left-signup img{
+    width: 250px;
+    height: 250px;
+    margin-bottom: 20px;
+}
+.left-signup h1{
+    font-size: 32px;
+    margin-bottom: 15px;
+}
+.left-signup p{
+    font-size: 16px;
+    max-width: 420px;
+    opacity: 0.95;
+}

@@ -10,7 +10,26 @@ export default function Login() {
   function togglePassword(){
     setShowPass(!showPass);
   }
-  
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
+  const [message,setMessage] = useState("");
+
+  const handleLogin = async(e)=>{
+    e.preventDefault();
+    const response = await fetch("http://localhost:8080/login",{
+      method:"POST",
+      headers: {
+        "Content-type":"application/json",
+      },
+      body:JSON.stringify({
+        email,
+        password,
+      }),
+    });
+    const data = await response.json();
+    setMessage(data.message);
+
+  };
   return (
     <div className="login">
       <div className="left-login">
@@ -27,10 +46,10 @@ export default function Login() {
           <p className="subtitle">Login to continue planning your journey</p>
         <form className="login-form">
         <div className="mb-3">
-          <label htmlFor="email" className="form-label">
+          <label htmlFor="email" className="form-label" >
             Email address
           </label>
-          <input type="email" className="form-control" id="email" />
+          <input type="email" className="form-control" id="email" value={email} onChange={(e)=>setEmail(e.target.value)}/>
           <div className="form-text">
             We'll never share your email with anyone else.
           </div>
@@ -40,7 +59,7 @@ export default function Login() {
           <label htmlFor="password" className="form-label">
             Password
           </label>
-          <input type={showPass?"text":"password"} className="form-control" id="password" />
+          <input type={showPass?"text":"password"} className="form-control" id="password" value={password} onChange={(e)=>setPassword(e.target.value)}/>
         </div>
 
         <div className="mb-3 form-check">
@@ -50,8 +69,8 @@ export default function Login() {
           </label>
         </div>
 
-        <button type="submit" className="btn btn-primary w-100">
-          Submit
+        <button type="submit" className="btn btn-primary w-100" onClick={handleLogin}>
+          Login
         </button>
         <div className="lower-box">
           <p>Forgot <a href="">Password?</a></p>

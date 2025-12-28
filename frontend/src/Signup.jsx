@@ -26,6 +26,10 @@ export default function Signup(){
           <p className="subtitle">Login to continue planning your journey</p>
         <form className="login-form">
         <div className="mb-3">
+          <label htmlFor="name" className="form-label">
+           Name
+          </label>
+          <input type="text" className="form-control" id="name" />
           <label htmlFor="email" className="form-label">
             Email address
           </label>
@@ -37,9 +41,13 @@ export default function Signup(){
 
         <div className="mb-3">
           <label htmlFor="password" className="form-label">
-            Password
+            Create Password
           </label>
           <input type={showPass?"text":"password"} className="form-control" id="password" />
+          <label htmlFor="confirm-password" className="form-label">
+            Confirm Password
+          </label>
+          <input type={showPass?"text":"password"} className="form-control" id="confirm-password" />
         </div>
 
         <div className="mb-3 form-check">
@@ -50,12 +58,8 @@ export default function Signup(){
         </div>
 
         <button type="submit" className="btn btn-primary w-100">
-          Submit
+          Sign up
         </button>
-        <div className="lower-box">
-          <p>Forgot <a href="">Password?</a></p>
-          <p>Don't have an account? <a href="">Sign up</a></p>
-        </div>
         
       </form>
       </div>

@@ -31,3 +31,7 @@
     max-width: 420px;
     opacity: 0.95;
 }
+
+.form-label{
+    margin-top: 10px;
+}

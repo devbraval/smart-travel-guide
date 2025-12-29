@@ -1,4 +1,4 @@
-import logo from "./assets/Applogo.jpeg"
+import logo from "./assets/newhdlogo.png";
 import "./Signup.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -20,7 +20,7 @@ export default function Signup(){
                   tailored to your district using AI-powered recommendations.
                     </p>
               </div>
-              <div className="right-login">
+              <div className="right-signup">
         <div className="login-box">
           <h2>Welcome Back 👋</h2>
           <p className="subtitle">Login to continue planning your journey</p>

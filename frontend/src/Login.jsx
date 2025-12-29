@@ -1,4 +1,4 @@
-import logo from "./assets/Applogo.jpeg";
+import logo from "./assets/newhdlogo.png";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./Login.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -72,6 +72,7 @@ export default function Login() {
         <button type="submit" className="btn btn-primary w-100" onClick={handleLogin}>
           Login
         </button>
+        <p>{message}</p>
         <div className="lower-box">
           <p>Forgot <a href="">Password?</a></p>
           <p>Don't have an account? <a href="">Sign up</a></p>

@@ -18,13 +18,15 @@
     height: 100vh;
 }
 .left-login img{
-    width: 250px;
-    height: 250px;
-    margin-bottom: 20px;
+    width: 400px;
+    height: 400px;
+
 }
 .left-login h1{
     font-size: 32px;
-    margin-bottom: 15px;
+    position: relative;
+    top:-35px;
+    margin-bottom: -5px;
 }
 .left-login p{
     font-size: 16px;

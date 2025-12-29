@@ -18,13 +18,14 @@
     height: 100vh;
 }
 .left-signup img{
-    width: 250px;
-    height: 250px;
-    margin-bottom: 20px;
+    width: 400px;
+    height: 400px;
 }
 .left-signup h1{
     font-size: 32px;
-    margin-bottom: 15px;
+    position: relative;
+    top:-35px;
+    margin-bottom: -5px;
 }
 .left-signup p{
     font-size: 16px;
@@ -34,4 +35,40 @@
 
 .form-label{
     margin-top: 10px;
+}
+
+.right-signup{
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    
+}
+@keyframes SlideFromLeft {
+    from{
+        transform: translateX(-60px);
+        opacity: 0;
+    }to{
+        transform: translate(0px);
+        opacity: 1;
+    }
+
+}
+.left-signup{
+    animation: SlideFromLeft 1s ease-out forwards ;
+}
+@keyframes fadeUp {
+    from{
+        transform: translateY(40px);
+        opacity: 0;
+    }to{
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.right-signup{
+    animation: fadeUp 1s ease-out forwards;
+    animation-delay: 0.1s;
 }

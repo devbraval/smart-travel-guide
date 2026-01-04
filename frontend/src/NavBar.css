@@ -1,0 +1,30 @@
+
+img{
+    height: 75px ;
+    width: auto;
+    cursor: pointer;
+}
+
+
+#icon{
+    height: auto;
+    width: 20px;
+    margin-left: 15px;
+    cursor: pointer;
+}
+.nav {
+  display: flex;
+  align-items: center;        
+  justify-content: space-between;
+  width: 100%;
+}
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.nav-center{
+    display: flex;
+    justify-content: space-evenly;
+    flex: 1;
+}

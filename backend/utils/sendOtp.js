@@ -14,3 +14,5 @@ async function sendOtp(email,otp) {
         `
     });
 }
+
+module.exports = sendOtp;

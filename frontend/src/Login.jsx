@@ -4,18 +4,24 @@ import "./Login.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
+import useCooldown from "../hooks/useCooldown";
 
 export default function Login() {
   const [showPass,setShowPass] = useState(false);
+  const { isDisabled, cooldown, startCooldown } = useCooldown(10);
+
   function togglePassword(){
     setShowPass(!showPass);
   }
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
   const [message,setMessage] = useState("");
+  
 
   const handleLogin = async(e)=>{
     e.preventDefault();
+    if (isDisabled) return;
+    startCooldown();
     const response = await fetch("http://localhost:8080/login",{
       method:"POST",
       headers: {
@@ -27,8 +33,17 @@ export default function Login() {
       }),
     });
     const data = await response.json();
-    setMessage(data.message);
-
+    if(!response.ok && data.error?.message==="User Not Founded"){
+       alert("User not found. Please sign up.");
+      window.location.href = "/signup";
+      return;
+    }
+    if (!response.ok) {
+    setMessage(data.error?.message || "Login failed");
+    return;
+  }
+    localStorage.setItem("otpEmail",email);
+    window.location.href="/otp"
   };
   return (
     <div className="login">
@@ -69,7 +84,7 @@ export default function Login() {
           </label>
         </div>
 
-        <button type="submit" className="btn btn-primary w-100" onClick={handleLogin}>
+        <button type="submit" className="btn btn-primary w-100" onClick={handleLogin} disabled={isDisabled}>
           Login
         </button>
         <p>{message}</p>

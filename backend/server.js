@@ -22,18 +22,39 @@ app.get("/",(req,res)=>{
 app.post("/signup",wrapAsync(async(req,res,next)=>{
     const {name,email,password} = req.body;
     const existingUser = await User.findOne({email});
-    if(existingUser){
-        next(new ExpressError(404,"User Already Exists! "));
-    }
-    const hasedPassword = await bcrypt.hash(password,10);
+    if (existingUser) {
+  
+  if (!existingUser.isVerified) {
+    const otp = generateOtp();
+    existingUser.otp = otp;
+    existingUser.otpExpiry = Date.now() + 5 * 60 * 1000;
+    existingUser.lastOtpSentAt = new Date();
+    await existingUser.save();
+    await sendOtp(email, otp);
+
+    return res.json({
+      success: true,
+      message: "OTP resent to email"
+    });
+  }
+
+  //  user already verified
+  return res.json({
+    success: false,
+    message: "User already exists. Please login."
+  });
+}
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOtp();
     const user = new User({
         userId:uuidv4(),
         name,
         email,
-        hasedPassword,
+        password: hashedPassword,
         otp,
         otpExpiry:Date.now()+5*60*1000,
+        lastOtpSentAt: new Date(),
     });
     await user.save();
     await sendOtp(email,otp);
@@ -45,33 +66,43 @@ app.post("/signup",wrapAsync(async(req,res,next)=>{
 }));
 app.post("/login",wrapAsync(async(req,res,next)=>{
     const {email,password} = req.body;
-    const existingUser = User.findOne({email});
-    if(!existingUser){
-        next(new ExpressError(404,"User Not Founded")); 
-    }
-    const otp = generateOtp();
+    const existingUser = await User.findOne({email});
+     if (!existingUser) {
+    return res.json({
+      success: false,
+      message: "User not found. Please signup."
+    });
+  }
     const isMatch = await bcrypt.compare(password,existingUser.password);
     if(!isMatch){
-        next(new ExpressError(404,"Invalid PassWord"));
-    }
-    existingUser.otp = otp;
-    existingUser.otpExpiry = Date.now()+5*60*1000;
-    await existingUser.save();
-    await sendOtp(email,otp);
-    res.json({
+        return res.json({
+        success: false,
+        message: "Invalid password"
+    })
+}
+    
+  const otp = generateOtp();
+  existingUser.otp = otp;
+  existingUser.otpExpiry = Date.now() + 5 * 60 * 1000;
+  existingUser.lastOtpSentAt = new Date();
+  await existingUser.save();
+  await sendOtp(email, otp);
+
+  return res.json({
     success: true,
     message: "OTP sent to email"
   });
-    
+
+
 }));
 app.post("/verify-otp",wrapAsync(async(req,res,next)=>{
     const {email,otp} = req.body;
     const user = await User.findOne({email});
     if(!user){
-        next (new ExpressError(404,"User Not Founded"));
+        return next (new ExpressError(404,"User Not Founded"));
     }
     if(user.otp!==otp || user.otpExpiry<Date.now()){
-        next(new ExpressError(404,"Invalid or Expired Otp"));
+        return next(new ExpressError(404,"Invalid or Expired Otp"));
     }
     user.otp=null;
     user.otpExpiry=null;
@@ -84,16 +115,51 @@ app.post("/verify-otp",wrapAsync(async(req,res,next)=>{
     });
     
 }));
+
+app.post("/resend-otp", wrapAsync(async (req, res, next) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return next(new ExpressError(404, "User Not Found"));
+  }
+
+  // ⏳ 30-second cooldown
+  if (
+    user.lastOtpSentAt &&
+    Date.now() - user.lastOtpSentAt.getTime() < 30 * 1000
+  ) {
+    return res.json({
+      success: false,
+      message: "Please wait before requesting OTP again"
+    });
+  }
+
+  const otp = generateOtp();
+  user.otp = otp;
+  user.otpExpiry = Date.now() + 5 * 60 * 1000;
+  user.lastOtpSentAt = new Date();
+
+  await user.save();
+  await sendOtp(email, otp);
+
+  res.json({
+    success: true,
+    message: "OTP resent successfully"
+  });
+}));
+
 app.listen(port,()=>{
     console.log(`App is Listing on port ${port}`);
 });
 
 app.use((err,req,res,next)=>{
-    const {statusCode=500,message="Something went worng"}= err;
-    res.status({
+    const message = err.message || "Somthing went wrong";
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({   
         error:{
+            success:false,
             message,
-            statusCode,
         }
     });
 });

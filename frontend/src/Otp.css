@@ -1,0 +1,83 @@
+.otp-page{
+    height: 100vh;
+    background: linear-gradient(135deg,#0073ff, #00c6ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+}
+
+.otp-card{
+    background-color: white;
+    text-align: center;
+    border-radius: 14px;
+    padding: 35px 40px;
+    width: 420px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.otp-card h2{
+    font-size: 26px;
+    margin-bottom: 8px;
+}
+   
+.subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 25px;
+}
+
+.otp-input{
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.otp-input input{
+    width: 50px;
+    height: 55px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 22px;
+    text-align: center;
+    border: 1.5px solid #d0d0d0;
+    transition: all 0.2s ease;
+}
+.otp-inputs input:focus {
+  border-color: #0073ff;
+  box-shadow: 0 0 0 2px rgba(0, 115, 255, 0.2);
+}
+
+.verify-btn {
+  width: 100%;
+  padding: 12px;
+  background: #0073ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.verify-btn:hover {
+  background: #005fe0;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+
+.resend {
+  margin-top: 18px;
+  font-size: 13px;
+  color: #666;
+}
+
+.resend span {
+  color: #0073ff;
+  cursor: pointer;
+  font-weight: 500;
+}

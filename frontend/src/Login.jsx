@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import "./Login.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import {Link} from "react-router-dom"
 import { useState } from "react";
 import useCooldown from "../hooks/useCooldown";
 
@@ -90,7 +91,9 @@ export default function Login() {
         <p>{message}</p>
         <div className="lower-box">
           <p>Forgot <a href="">Password?</a></p>
-          <p>Don't have an account? <a href="">Sign up</a></p>
+          <p>Don't have an account? {" "}
+            <Link to="/signup">Sign up</Link>
+          </p>
         </div>
         
       </form>

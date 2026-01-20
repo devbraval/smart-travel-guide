@@ -11,6 +11,8 @@ const User = require("./models/user");
 const sendOtp = require("./utils/sendOtp");
 const generateOtp = require("./utils/otp");
 const { options } = require("./email");
+const otpgenrator = require("./utils/otp");
+const user = require("./models/user");
 const port = 8080;
 //middleware
 app.use(cors());
@@ -148,7 +150,41 @@ app.post("/resend-otp", wrapAsync(async (req, res, next) => {
     message: "OTP resent successfully"
   });
 }));
+app.post("/reset-password",async(req,res)=>{
+  const {email,password,confirmPass} = req.body;
+  const user = await User.findOne({email});
+  if(!password || !confirmPass){
+    return res.json({
+      success:false,
+      message:"Password and confirm password are required",
+    })
+  };
+    if(password !== confirmPass){
+      res.json({
+        success:false,
+        message:"Passwords are not same",
+      });
+      return;
+    };
+   if(!user){
+    res.json({
+      success:false,
+      message:"The user is not Founded",
+    });
+    return;
+   }
+   const hashedPassword = await bcrypt.hash(password,10);
+   user.password = hashedPassword;
 
+   await user.save();
+   return res.json({
+    success:true,
+    message:"Password changed successfully!",
+   });
+});
+app.post("verify-reset-otp",wrapAsync((req,res)=>{
+  const {email,otp} = req.body;
+}))
 app.listen(port,()=>{
     console.log(`App is Listing on port ${port}`);
 });

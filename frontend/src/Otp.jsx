@@ -83,8 +83,8 @@ export default function Otp(){
     const data = await response.json();
 
     if (data.success) {
-      startCooldown(); // ✅ ONLY after success
-      showAlert("success", "OTP resent to your email 📧");
+      startCooldown(); 
+      showAlert("success", "OTP resent to your email ");
     } else {
       showAlert("error", data.message);
     }

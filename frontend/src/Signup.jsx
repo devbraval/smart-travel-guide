@@ -56,8 +56,8 @@ export default function Signup(){
               </div>
               <div className="right-signup">
         <div className="login-box">
-          <h2>Welcome Back 👋</h2>
-          <p className="subtitle">Login to continue planning your journey</p>
+          <h2>Welcome 👋</h2>
+          <p className="subtitle">Signup to continue planning your journey</p>
         <form className="login-form">
         <div className="mb-3">
           <label htmlFor="name" className="form-label">

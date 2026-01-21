@@ -49,12 +49,13 @@ app.post("/signup",wrapAsync(async(req,res,next)=>{
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOtp();
+    const hashedOtp = await bcrypt.hash(otp,5);
     const user = new User({
         userId:uuidv4(),
         name,
         email,
         password: hashedPassword,
-        otp,
+        hashedOtp,
         otpExpiry:Date.now()+5*60*1000,
         lastOtpSentAt: new Date(),
     });
@@ -82,13 +83,23 @@ app.post("/login",wrapAsync(async(req,res,next)=>{
         message: "Invalid password"
     })
 }
-    
+  user.otpPurpose="auth"; 
+  user.otpAttempts = 0;
   const otp = generateOtp();
-  existingUser.otp = otp;
+  const hashedOtp = await bcrypt.hash(otp,5);
+  existingUser.otp = hashedOtp;
   existingUser.otpExpiry = Date.now() + 5 * 60 * 1000;
   existingUser.lastOtpSentAt = new Date();
   await existingUser.save();
-  await sendOtp(email, otp);
+  if(await sendOtp(email, otp)){
+    user.otpAttempts = user.otpAttempts+1;
+  }else{
+    return res.json({
+    success: false,
+    message: "Some Error Occure;"
+  });
+  }
+  
 
   return res.json({
     success: true,
@@ -100,12 +111,15 @@ app.post("/login",wrapAsync(async(req,res,next)=>{
 app.post("/verify-otp",wrapAsync(async(req,res,next)=>{
     const {email,otp} = req.body;
     const user = await User.findOne({email});
+    const hashedOtp = bcrypt.hash(otp,5);
     if(!user){
-        return next (new ExpressError(404,"User Not Founded"));
+       return next (new ExpressError(404,"User Not Founded"));
     }
-    if(user.otp!==otp || user.otpExpiry<Date.now()){
+
+    if(!bcrypt.compare(user.otp,hashedOtp) || user.otpExpiry<Date.now()){
         return next(new ExpressError(404,"Invalid or Expired Otp"));
     }
+    user.otpPurpose="auth";
     user.otp=null;
     user.otpExpiry=null;
     user.isVerified=true;
@@ -138,7 +152,8 @@ app.post("/resend-otp", wrapAsync(async (req, res, next) => {
   }
 
   const otp = generateOtp();
-  user.otp = otp;
+  const hashedOtp = await bcrypt.hash(otp,5);
+  user.otp = hashedOtp;
   user.otpExpiry = Date.now() + 5 * 60 * 1000;
   user.lastOtpSentAt = new Date();
 
@@ -182,8 +197,17 @@ app.post("/reset-password",async(req,res)=>{
     message:"Password changed successfully!",
    });
 });
-app.post("verify-reset-otp",wrapAsync((req,res)=>{
+app.post("verify-reset-otp",wrapAsync(async(req,res)=>{
   const {email,otp} = req.body;
+  const user = await User.findOne({email});
+  if(!email){
+    return res.json({
+      success:false,
+      message:"User Is Not Founded",
+    });
+
+  }
+  const 
 }))
 app.listen(port,()=>{
     console.log(`App is Listing on port ${port}`);

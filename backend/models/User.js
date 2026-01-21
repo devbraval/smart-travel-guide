@@ -33,7 +33,15 @@ const userSchema = new mongoose.Schema({
     isVerified:{
         type:Boolean,
         default:false,
-    }
+    },
+    otpPurpose:{
+        type:String,
+        enum:["auth","reset"],
+    },
+    otpAttempts:{
+        type:Number,
+        default:0,
+    },
 },{timestamps:true});
 
 module.exports = mongoose.model("User",userSchema);

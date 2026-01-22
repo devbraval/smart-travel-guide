@@ -26,14 +26,6 @@ const userSchema = new mongoose.Schema({
     otpExpiry:{
         type:Date,
     },
-    lastOtpSentAt:{
-        type:Date,
-        default:null,
-    },
-    isVerified:{
-        type:Boolean,
-        default:false,
-    },
     otpPurpose:{
         type:String,
         enum:["auth","reset"],
@@ -42,6 +34,17 @@ const userSchema = new mongoose.Schema({
         type:Number,
         default:0,
     },
+    lastOtpSentAt:{
+        type:Date,
+        default:null,
+    },
+    resetToken:String,
+    resetTokenExpiry:Date,
+    isVerified:{
+        type:Boolean,
+        default:false,
+    },
+    
 },{timestamps:true});
 
 module.exports = mongoose.model("User",userSchema);

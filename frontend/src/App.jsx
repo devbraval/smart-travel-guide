@@ -6,22 +6,26 @@ import {BrowserRouter,Routes,Route} from "react-router-dom";
 import ResetPassword from "./ResetPassword"
 import NavBar from "./NavBar";
 import VerifyResetOtp from "./VerifyResetOtp";
+import ForgotPassword from "./ForgotPassword";
 
 function App() {
   
 
   return (
     <>
-    {/* <BrowserRouter>
+     <BrowserRouter>
     <Routes>
       <Route path="/" element={<Login/>}/>
       <Route path="/login" element={<Login/>}/>
       <Route path="/signup" element={<Signup/>}/>
       <Route path="/otp" element={<Otp/>}/>
+      <Route path="/forgot-password" element={<ForgotPassword/>}/>
+      <Route path="/verify-reset-otp" element={<VerifyResetOtp/>}/>
+      <Route path="/reset-password" element={<ResetPassword/>}/>
       <Route path="/DeshBoard" element={<DeshBoard/>}/>
     </Routes>
-    </BrowserRouter>  */}
-    <VerifyResetOtp/>
+    </BrowserRouter>  
+    
    
     </>
   )

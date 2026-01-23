@@ -90,7 +90,9 @@ export default function Login() {
         </button>
         <p>{message}</p>
         <div className="lower-box">
-          <p>Forgot <a href="">Password?</a></p>
+          <p>Forgot 
+            <Link to="/forgot-password">Password?</Link>
+          </p>
           <p>Don't have an account? {" "}
             <Link to="/signup">Sign up</Link>
           </p>

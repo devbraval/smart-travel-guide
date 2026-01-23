@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const {v4:uuidv4} = require("uuid");
 require("./db");
 const wrapAsync = require("./utils/wrapAsync");
@@ -23,7 +23,7 @@ app.get("/",(req,res)=>{
 });
 app.post("/signup",async(req,res)=>{
   const {name,email,password} = req.body;
-  const user = await User.findOne({email});
+  let user = await User.findOne({email});
   if(user && user.isVerified){
     return res.json({
       success:false,
@@ -31,9 +31,9 @@ app.post("/signup",async(req,res)=>{
     });
   }
   const otp = generateOtp();
-  const hashedOtp = bcrypt.hash(otp,5);
+  const hashedOtp = await bcrypt.hash(otp,5);
   if(!user){
-    const hashedPassword = bcrypt.hash(password,10);
+    const hashedPassword = await bcrypt.hash(password,10);
     user = new User({
       userId:uuidv4(),
       name:name,
@@ -72,7 +72,7 @@ app.post("/login",async(req,res)=>{
     });
   }
   const otp = generateOtp();
-  const hashedOtp = bcrypt.hash(otp,5);
+  const hashedOtp = await bcrypt.hash(otp,5);
   user.otp=hashedOtp;
   user.otpExpiry= Date.now()+5*60*1000;
   user.otpPurpose="auth",
@@ -136,57 +136,113 @@ app.post("/verify-otp",async(req,res)=>{
 
     await user.save();
     return res.json({
-        success:ture,
+        success:true,
         message:"Otp Verified",
       });
 });
 
-app.post("/resend-otp", wrapAsync(async (req, res, next) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return next(new ExpressError(404, "User Not Found"));
-  }
-
-  // ⏳ 30-second cooldown
-  if (
-    user.lastOtpSentAt &&
-    Date.now() - user.lastOtpSentAt.getTime() < 30 * 1000
-  ) {
+app.post("/resend-otp", async (req, res) => {
+  const {email} = req.body;
+  const user = await User.findOne({email});
+  if(!user){
     return res.json({
-      success: false,
-      message: "Please wait before requesting OTP again"
-    });
+        success:false,
+        message:"User Not found",
+      });
   }
-
+  if(!user.otp || !user.otpPurpose){
+    return res.json({
+        success:false,
+        message:"Otp Not found",
+      });
+  }
+  if(user.otpAttempts >= 5){
+    return res.json({
+        success:false,
+        message:"Too many attempts",
+      });
+  }
+  if(user.lastOtpSentAt && Date.now()-user.lastOtpSentAt < 30*1000){
+    return res.json({
+        success:false,
+        message:"Please wait before requesting OTP again",
+      });
+  }
   const otp = generateOtp();
   const hashedOtp = await bcrypt.hash(otp,5);
   user.otp = hashedOtp;
-  user.otpExpiry = Date.now() + 5 * 60 * 1000;
-  user.lastOtpSentAt = new Date();
+  user.otpExpiry = Date.now()+5*60*1000;
+  user.otpAttempts = 0;
+  user.lastOtpSentAt=new Date();
 
   await user.save();
-  await sendOtp(email, otp);
+  await sendOtp(email,otp);
+  return res.json({
+        success:true,
+        message:"OTP resent successfully",
+      });
+}); 
+app.post("/forgot-password",async(req,res)=>{
+  const {email} = req.body;
+  const user = await User.findOne({email});
+  if(!user){
+    return res.json({success:true});
+  }
+  const otp = generateOtp();
+  const hashedOtp = await bcrypt.hash(otp,5);
+  user.otp = hashedOtp;
+  user.otpExpiry = Date.now()+5*60*1000;
+  user.otpPurpose="reset";
+  user.otpAttempts = 0;
+  await user.save();
+  await sendOtp(email,otp);
+  return res.json({ success: true, message: "OTP sent" });
+});
 
-  res.json({
-    success: true,
-    message: "OTP resent successfully"
-  });
-}));
-app.post
-app.post("verify-reset-otp",wrapAsync(async(req,res)=>{
+app.post("/verify-reset-otp",async(req,res)=>{
   const {email,otp} = req.body;
   const user = await User.findOne({email});
-  if(!email){
+  if(!user ||user.otpPurpose !=="reset"){
     return res.json({
       success:false,
-      message:"User Is Not Founded",
+      message:"Invalid Otp",
     });
-
   }
-  const 
-}))
+
+  const isValid = await bcrypt.compare(otp,user.otp);
+  if(!isValid || user.otpExpiry<Date.now()){
+    return res.json({
+      success:false,
+      message:"Invalid Otp",
+    });
+  }
+  user.resetToken=uuidv4();
+  user.resetTokenExpiry = Date.now()+10*60*1000;
+
+  user.otp = null;
+  user.otpAttempts=0;
+  user.otpExpiry=0;
+  user.otpPurpose=null;
+  await user.save();
+  res.json({
+    success:true,
+    resetToken:user.resetToken,
+  });
+});
+app.post("/reset-password",async(req,res)=>{
+  const{email,resetToken,password} = req.body;
+  const user = await User.findOne({email,resetToken});
+  if(!user || user.resetTokenExpiry < Date.now()){
+    return res.json({ success: false, message: "Invalid token" });
+  }
+  user.password = await bcrypt.hash(password,10);
+  user.resetToken = null;
+  user.resetTokenExpiry = null;
+
+  await user.save();
+
+  res.json({ success: true, message: "Password updated" });
+});
 app.listen(port,()=>{
     console.log(`App is Listing on port ${port}`);
 });

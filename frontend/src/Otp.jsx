@@ -120,7 +120,7 @@ export default function Otp(){
             ))
           }
         </div>
-        <button className="verify-btn" onClick={handleVerifyOtp}>
+        <button className="verify-btn" onClick={handleVerifyOtp} >
           Verify
         </button>
         <p className="error">{message}</p>

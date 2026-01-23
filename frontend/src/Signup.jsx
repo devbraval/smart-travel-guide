@@ -5,6 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
 import useCooldown from "../hooks/useCooldown";
+import { Link } from "react-router-dom";
 export default function Signup(){
   const [showPass,setShowPass] = useState(false);
   const [name,setName] = useState("");

@@ -1,0 +1,28 @@
+.card {
+  border: 1px solid #e5e7eb;
+  padding: 16px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.card-category {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background-color: #eef2ff;
+  color: #3730a3;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.card-description {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #555;
+}

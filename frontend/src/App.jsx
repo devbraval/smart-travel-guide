@@ -22,7 +22,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword/>}/>
       <Route path="/verify-reset-otp" element={<VerifyResetOtp/>}/>
       <Route path="/reset-password" element={<ResetPassword/>}/>
-      <Route path="/DeshBoard" element={<DeshBoard/>}/>
+      <Route path="/dashboard" element={<DeshBoard />} />
     </Routes>
     </BrowserRouter>  
     

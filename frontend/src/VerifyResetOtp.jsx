@@ -6,6 +6,7 @@ import { useState, useRef } from "react";
 export default function VerifyResetOtp() {
   const [otp, setOtp] = useState(new Array(6).fill(""));
   const userRef = useRef([]);
+  const [loading, setLoading] = useState(false);
 
   const [alert, setAlert] = useState({ type: "", message: "" });
   const { isDisabled, cooldown, startCooldown } = useCooldown(30);
@@ -34,20 +35,19 @@ export default function VerifyResetOtp() {
   };
 
   const handleVerifyOtp = async () => {
+    if (loading) return;
+
     const finalOtp = otp.join("");
     const email = localStorage.getItem("resetEmail");
 
-    if (!email) {
-      showAlert("error", "Session expired. Please start again.");
-      return;
-    }
-
     if (finalOtp.length !== 6) {
-      showAlert("error", "Enter a complete OTP");
+      showAlert("error", "Enter complete OTP");
       return;
     }
 
     try {
+      setLoading(true);
+
       const response = await fetch("http://localhost:8080/verify-reset-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,31 +57,29 @@ export default function VerifyResetOtp() {
       const data = await response.json();
 
       if (!data.success) {
-        showAlert("error", data.message || "Invalid OTP");
+        showAlert("error", data.message);
         return;
       }
 
-      // ✅ STORE RESET TOKEN
       localStorage.setItem("resetToken", data.resetToken);
 
-      showAlert("success", "OTP verified. Set new password.");
+      showAlert("success", "OTP verified");
 
       setTimeout(() => {
         window.location.href = "/reset-password";
       }, 1000);
     } catch {
       showAlert("error", "Server error");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // ✅ FIX: use old /resend-otp route
   const handleResend = async () => {
     if (isDisabled) return;
 
     const email = localStorage.getItem("resetEmail");
-    if (!email) {
-      showAlert("error", "Session expired. Please start again.");
-      return;
-    }
 
     try {
       const response = await fetch("http://localhost:8080/resend-otp", {
@@ -97,12 +95,11 @@ export default function VerifyResetOtp() {
         return;
       }
 
-      // reset inputs + cooldown
       setOtp(new Array(6).fill(""));
       userRef.current[0]?.focus();
       startCooldown();
 
-      showAlert("success", "OTP resent to your email");
+      showAlert("success", "OTP resent");
     } catch {
       showAlert("error", "Server not reachable");
     }
@@ -110,22 +107,16 @@ export default function VerifyResetOtp() {
 
   return (
     <>
-      <Alert
-        type={alert.type}
-        message={alert.message}
-        onClose={() => setAlert({ type: "", message: "" })}
-      />
+      <Alert {...alert} onClose={() => setAlert({})} />
 
       <div className="otp-page">
         <div className="otp-card">
           <h2>Verify OTP</h2>
-          <p className="subtitle">Your code was sent to your email</p>
 
           <div className="otp-input">
             {otp.map((digit, index) => (
               <input
                 key={index}
-                type="text"
                 maxLength={1}
                 value={digit}
                 ref={(el) => (userRef.current[index] = el)}
@@ -138,18 +129,17 @@ export default function VerifyResetOtp() {
           <button
             className="verify-btn"
             onClick={handleVerifyOtp}
-            disabled={otp.join("").length !== 6}
+            disabled={loading}
           >
             Verify
           </button>
 
           <p className="resend">
-            Don’t receive the code?{" "}
+            Didn’t receive code?{" "}
             <span
               onClick={handleResend}
               style={{
                 color: isDisabled ? "gray" : "#0d6efd",
-                cursor: isDisabled ? "not-allowed" : "pointer",
                 pointerEvents: isDisabled ? "none" : "auto",
               }}
             >

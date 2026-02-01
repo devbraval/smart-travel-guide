@@ -10,6 +10,7 @@ export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
+  const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ type: "", message: "" });
 
   const togglePassword = () => setShowPassword(!showPassword);
@@ -21,6 +22,7 @@ export default function ResetPassword() {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    if (loading) return;
 
     if (!password || !confirmPass) {
       showAlert("error", "All input fields are required");
@@ -41,14 +43,13 @@ export default function ResetPassword() {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/reset-password",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, resetToken, password }),
-        }
-      );
+      setLoading(true);
+
+      const response = await fetch("http://localhost:8080/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, resetToken, password }),
+      });
 
       const data = await response.json();
 
@@ -64,9 +65,11 @@ export default function ResetPassword() {
 
       setTimeout(() => {
         window.location.href = "/login";
-      }, 2000);
+      }, 1500);
     } catch {
       showAlert("error", "Server error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,32 +85,24 @@ export default function ResetPassword() {
         <div className="left-pass">
           <img src={logo} alt="logo" />
           <h1>Smart Travel Guide 🌍</h1>
-          <p>
-            Discover famous places, food, temples, museums, and hidden gems
-            tailored to your district.
-          </p>
         </div>
 
         <div className="right-pass">
           <div className="pass-box">
             <form className="pass-form" onSubmit={handleResetPassword}>
-              <div className="mb-3">
-                <label className="form-label">New Password</label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="form-control"
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control mb-3"
+                placeholder="New password"
+                onChange={(e) => setPassword(e.target.value)}
+              />
 
-              <div className="mb-3">
-                <label className="form-label">Confirm Password</label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="form-control"
-                  onChange={(e) => setConfirmPass(e.target.value)}
-                />
-              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control mb-3"
+                placeholder="Confirm password"
+                onChange={(e) => setConfirmPass(e.target.value)}
+              />
 
               <div className="mb-3">
                 <FontAwesomeIcon
@@ -118,8 +113,8 @@ export default function ResetPassword() {
                 <span className="ms-2">Show password</span>
               </div>
 
-              <button type="submit" className="btn btn-primary w-100">
-                Change Password
+              <button className="btn btn-primary w-100" disabled={loading}>
+                {loading ? "Updating..." : "Change Password"}
               </button>
             </form>
           </div>

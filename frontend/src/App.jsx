@@ -1,4 +1,4 @@
-import DeshBoard from "./DeshBoard";
+import DeshBoard from "./DashBoard";
 import Login from "./Login";
 import Signup from "./Signup";
 import Otp from "./Otp";

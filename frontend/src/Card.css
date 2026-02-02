@@ -1,28 +1,97 @@
-.card {
-  border: 1px solid #e5e7eb;
-  padding: 16px;
-  border-radius: 10px;
-  background-color: #ffffff;
+.places-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 24px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #333;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 3rem;
+  color: #111;
+  letter-spacing: -0.5px;
+  border-bottom: 1px solid #eaeaea;
+  padding-bottom: 20px;
+}
+
+.category-section {
+  margin-bottom: 5rem;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.category-icon {
+  font-size: 1.25rem;
+  color: #555;
+}
+
+.category-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #222;
+  text-transform: capitalize;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.places-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.place-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.place-card:hover {
+  border-color: #000;
+}
+
+.card-content {
   margin-bottom: 12px;
 }
 
-.card-title {
-  margin: 0;
-  font-size: 18px;
+.place-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0 0 8px 0;
+  color: #111;
 }
 
-.card-category {
+.place-tag {
   display: inline-block;
-  margin-top: 6px;
-  padding: 4px 8px;
-  background-color: #eef2ff;
-  color: #3730a3;
-  font-size: 12px;
-  border-radius: 6px;
+  padding: 4px 0;
+  color: #666;
+  font-size: 0.85rem;
+  font-weight: 500;
+
 }
 
-.card-description {
-  margin-top: 8px;
-  font-size: 14px;
-  color: #555;
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  font-size: 1.2rem;
+  color: #666;
+  font-weight: 400;
 }

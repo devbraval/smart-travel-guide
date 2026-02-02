@@ -312,12 +312,38 @@ app.post("/api/nearby-places", async (req, res) => {
 
     const selectedNames = await processWithAi(places);
 
-    const categorizedPlaces = categorizePlaces(
+    console.log(`Places found: ${places.length}, AI selected: ${Array.isArray(selectedNames) ? selectedNames.length : "ALL"}`);
+
+    let finalNames = selectedNames;
+    if (Array.isArray(selectedNames) && selectedNames.length < 3 && places.length >= 3) {
+      console.log("AI selected too few places, falling back to showing top 10 original places.");
+      finalNames = places.slice(0, 10).map(p => p.name);
+    }
+
+    let categorizedPlaces = categorizePlaces(
       places,
-      Array.isArray(selectedNames)
-        ? selectedNames
+      Array.isArray(finalNames)
+        ? finalNames
         : places.map((p) => p.name)
     );
+
+    // If total categorized places is very low (e.g. < 3), and we have more raw places,
+    // force a "Raw/Other" dump to ensure the user sees something.
+    let totalCategorized = Object.values(categorizedPlaces).flat().length;
+
+    if (totalCategorized < 3 && places.length >= 3) {
+      console.log("Categorization dropped too many items. Forcefully adding raw places to 'Other'.");
+      if (!categorizedPlaces["Other"]) categorizedPlaces["Other"] = [];
+
+      // Add places that aren't already there
+      const existingNames = new Set(Object.values(categorizedPlaces).flat().map(p => p.name));
+
+      places.slice(0, 15).forEach(p => {
+        if (!existingNames.has(p.name)) {
+          categorizedPlaces["Other"].push(p);
+        }
+      });
+    }
 
     res.json({
       success: true,

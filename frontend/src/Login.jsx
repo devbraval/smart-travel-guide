@@ -34,7 +34,6 @@ export default function Login() {
 
     const data = await response.json();
 
-    // ✅ FIX: check backend success, NOT response.ok
     if (!data.success) {
       setMessage(data.message || "Login failed");
       return;

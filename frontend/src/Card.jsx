@@ -1,5 +1,36 @@
 import { useEffect, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUtensils,
+  faTree,
+  faCoffee,
+  faHotel,
+  faMapMarkerAlt,
+  faShoppingBag,
+  faWater,
+  faPrayingHands,
+  faGamepad
+} from "@fortawesome/free-solid-svg-icons";
 import "./Card.css";
+
+const getIconForCategory = (category) => {
+  const map = {
+    "Restaurant": faUtensils,
+    "Fast Food": faUtensils,
+    "Food Court": faUtensils,
+    "Cafe": faCoffee,
+    "Park": faTree,
+    "Garden": faTree,
+    "Hotel": faHotel,
+    "Mall": faShoppingBag,
+    "Super Market": faShoppingBag,
+    "Religious Place": faPrayingHands,
+    "Water": faWater,
+    "Beach": faWater,
+    "Game Zone": faGamepad
+  };
+  return map[category] || faMapMarkerAlt;
+};
 
 export default function Card() {
   const [categories, setCategories] = useState({});
@@ -10,48 +41,58 @@ export default function Card() {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
 
-      const response = await fetch(
-        "http://localhost:8080/api/nearby-places",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lat, lng }),
-        }
-      );
+      try {
+        const response = await fetch(
+          "http://localhost:8080/api/nearby-places",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat, lng }),
+          }
+        );
 
-      const data = await response.json();
-
-      setCategories(data.categories || {});
+        const data = await response.json();
+        setCategories(data.categories || {});
+      } catch (error) {
+        console.error("Failed to fetch places:", error);
+      } finally {
+        setLoading(false);
+      }
+    }, (error) => {
+      console.error("Geolocation error:", error);
       setLoading(false);
     });
   }, []);
 
-  if (loading) return <h2>Finding best places near you…</h2>;
+  if (loading) return <div className="loading-container">Finding best places near you...</div>;
 
   if (!categories || Object.keys(categories).length === 0) {
-    return <h2>No places found nearby</h2>;
+    return <div className="loading-container">No places found nearby</div>;
   }
 
   return (
-    <>
-      <h1>Best Places Near You</h1>
+    <div className="places-container">
+      <h1 className="page-title">Best Places Near You</h1>
 
       {Object.entries(categories).map(([category, places]) => (
-        <div key={category}>
-          <h2 className="category-title">{category}</h2>
+        <div key={category} className="category-section">
+          <div className="category-header">
+            <FontAwesomeIcon icon={getIconForCategory(category)} className="category-icon" />
+            <h2 className="category-title">{category}</h2>
+          </div>
 
-          <div className="category-section">
+          <div className="places-grid">
             {places.map((place, index) => (
-              <div key={index} className="card">
-                <h3 className="card-title">{place.name}</h3>
-                <span className="card-description">
-                  Popular nearby place
-                </span>
+              <div key={index} className="place-card">
+                <div className="card-content">
+                  <h3 className="place-name">{place.name}</h3>
+                  <span className="place-tag">{category}</span>
+                </div>
               </div>
             ))}
           </div>
         </div>
       ))}
-    </>
+    </div>
   );
 }

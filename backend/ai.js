@@ -27,6 +27,11 @@ Return ONLY valid JSON:
   }
 }
 
+Important:
+- Include places even if they are small or local.
+- If there are college canteens, printed shops, or hangout spots, include them also under "Restaurant" or "Other".
+- Do NOT be too strict.
+
 Data:
 ${JSON.stringify(simplified)}
 `;

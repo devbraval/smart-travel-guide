@@ -2,8 +2,10 @@ import logo from "./assets/newhdlogo.png";
 import "./NavBar.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse } from "@fortawesome/free-solid-svg-icons";
+import { useState } from "react";
 
 export default function NavBar() {
+  const [district, setDistrict] = useState("");
   return (
     <header className="navbar-container">
       <div className="nav-left">
@@ -17,6 +19,7 @@ export default function NavBar() {
             className="search-input"
             type="search"
             placeholder="Search places..."
+            onChange={(e) => setDistrict(e.target.value)}
           />
           <button className="search-btn">Search</button>
         </form>

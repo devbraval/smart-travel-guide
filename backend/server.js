@@ -286,19 +286,66 @@ app.post("/api/nearby-places", async (req, res) => {
     let source = "local";
     let city = null;
 
-    while (places.length < 10 && radius <= 12000) {
-      places = await runOverpass(lat, lng, radius);
-      radius += 2000;
+    // Search radii: 2km -> 5km -> 10km -> 15km -> 25km
+    while (places.length < 10 && radius <= 25000) {
+      console.log(`[DEBUG] Searching radius: ${radius}m...`);
+      const newPlaces = await runOverpass(lat, lng, radius);
+      console.log(`[DEBUG] Found ${newPlaces.length} places at ${radius}m`);
+
+      // If we significantly improve results, update places
+      if (newPlaces.length > places.length) places = newPlaces;
+
+      if (radius < 5000) radius = 5000;
+      else if (radius < 10000) radius = 10000;
+      else if (radius < 15000) radius = 15000;
+      else radius += 10000;
     }
 
+    console.log(`[DEBUG] Final Local Search Result: ${places.length} places`);
+
+    // Helper to calculate distance
+    const getDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371e3; // metres
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    // Correct coordinates for city fallback if needed
+    let searchLat = lat;
+    let searchLng = lng;
+
     if (places.length < 5) {
+      console.log("[DEBUG] Few places found nearby, checking city fallback...");
       const cityInfo = await reverseGeocode(lat, lng);
       if (cityInfo?.lat && cityInfo?.lng) {
-        places = await runOverpass(cityInfo.lat, cityInfo.lng, 12000);
-        source = "city";
-        city = cityInfo.city;
+        const cityPlaces = await runOverpass(cityInfo.lat, cityInfo.lng, 12000);
+        console.log(`[DEBUG] City Fallback Found: ${cityPlaces.length} places in ${cityInfo.city}`);
+
+        if (cityPlaces.length > places.length) {
+          places = cityPlaces;
+          source = "city";
+          city = cityInfo.city;
+          searchLat = cityInfo.lat; // Update search center
+          searchLng = cityInfo.lng;
+          console.log(`[DEBUG] Switched to city source: ${city}`);
+        }
       }
     }
+
+    // SORT BY DISTANCE
+    places = places.map(p => ({
+      ...p,
+      distance: getDistance(searchLat, searchLng, p.lat, p.lng)
+    })).sort((a, b) => a.distance - b.distance);
+
+    console.log("[DEBUG] Places sorted by distance. Closest:", places[0]?.name, Math.round(places[0]?.distance) + "m");
 
     if (!places.length) {
       return res.json({
@@ -327,15 +374,13 @@ app.post("/api/nearby-places", async (req, res) => {
         : places.map((p) => p.name)
     );
 
-    // If total categorized places is very low (e.g. < 3), and we have more raw places,
-    // force a "Raw/Other" dump to ensure the user sees something.
+
     let totalCategorized = Object.values(categorizedPlaces).flat().length;
 
     if (totalCategorized < 3 && places.length >= 3) {
       console.log("Categorization dropped too many items. Forcefully adding raw places to 'Other'.");
       if (!categorizedPlaces["Other"]) categorizedPlaces["Other"] = [];
 
-      // Add places that aren't already there
       const existingNames = new Set(Object.values(categorizedPlaces).flat().map(p => p.name));
 
       places.slice(0, 15).forEach(p => {
@@ -357,6 +402,16 @@ app.post("/api/nearby-places", async (req, res) => {
   }
 });
 
+app.post("/search-district", async (req, res) => {
+  const { district } = req.body;
+  if (!district) {
+    return res.json({
+      success: false,
+      message: "District is required!",
+    });
+  }
+
+})
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

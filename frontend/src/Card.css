@@ -95,3 +95,23 @@
   color: #666;
   font-weight: 400;
 }
+
+.location-notice {
+    background-color: #f8fbff;
+    border: 1px solid #cce5ff;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 0 0 20px 0;
+    color: #004085;
+    font-size: 0.95rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.location-notice p {
+    margin: 4px 0;
+}
+
+.location-notice strong {
+    font-weight: 600;
+}

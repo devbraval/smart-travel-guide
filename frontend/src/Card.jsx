@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUtensils,
@@ -34,9 +34,14 @@ const getIconForCategory = (category) => {
 
 export default function Card() {
   const [categories, setCategories] = useState({});
+  const [sourceInfo, setSourceInfo] = useState({ source: null, city: null });
   const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
@@ -52,6 +57,10 @@ export default function Card() {
         );
 
         const data = await response.json();
+
+        if (data.source) {
+          setSourceInfo({ source: data.source, city: data.city });
+        }
         setCategories(data.categories || {});
       } catch (error) {
         console.error("Failed to fetch places:", error);
@@ -73,6 +82,13 @@ export default function Card() {
   return (
     <div className="places-container">
       <h1 className="page-title">Best Places Near You</h1>
+
+      {sourceInfo.source === 'city' && (
+        <div className="location-notice">
+          <p>Could not find many places immediately around you.</p>
+          <p>Showing results for <strong>{sourceInfo.city || "your city"}</strong>.</p>
+        </div>
+      )}
 
       {Object.entries(categories).map(([category, places]) => (
         <div key={category} className="category-section">

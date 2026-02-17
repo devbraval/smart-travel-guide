@@ -1,5 +1,5 @@
 async function getGeoLocation(DISTRICT_NAME) {
-    const respose = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&q=${DISTRICT_NAME}
+    const respose = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&q=${encodeURIComponent(DISTRICT_NAME)}
 `, {
         headers: {
             "User-Agent": "smart-travel-app",

@@ -14,7 +14,15 @@ export default function NavBar() {
       </div>
 
       <div className="nav-center">
-        <form className="search-form" onSubmit={(e) => e.preventDefault()}>
+        <form
+          className="search-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!district.trim()) return;
+            window.location.href = `/search?district=${district}`;
+          }}
+        >
+
           <input
             className="search-input"
             type="search"

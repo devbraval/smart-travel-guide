@@ -16,6 +16,12 @@ const { reverseGeocode } = require("./utils/reverseGeocode");
 const { processWithAi } = require("./ai");
 const { categorizePlaces } = require("./utils/categorizePlaces");
 
+const { getGeoLocation } = require("./utils/getGeoLocation");
+const { getPlaceFromOverpass } = require("./utils/getPlaceFromOverpass");
+const { filterAndShortlist } = require("./utils/filterAndShortlist");
+const { rankplaces } = require("./utils/aiRanker");
+
+
 const port = process.env.PORT || 8080;
 
 app.use(cors());
@@ -403,15 +409,42 @@ app.post("/api/nearby-places", async (req, res) => {
 });
 
 app.post("/search-district", async (req, res) => {
-  const { district } = req.body;
-  if (!district) {
-    return res.json({
+  try {
+    const { district } = req.body;
+    if (!district || typeof district !== "string") {
+      return res.json({
+        success: false,
+        message: "District required",
+      });
+    }
+    const geo = await getGeoLocation(district);
+    const raw = await getPlaceFromOverpass(
+      geo.boundingbox
+    );
+    if (!raw.length) {
+      return res.json({
+        success: true,
+        location: geo.display_name,
+        results: {}
+      });
+
+    }
+    const grouped = filterAndShortlist(raw, 200);
+    const ranked = await rankplaces(grouped);
+    res.json({
+      success: true,
+      location: geo.display_name,
+      categories: Object.keys(ranked).length,
+      results: ranked
+    });
+  } catch (err) {
+    console.error("Search Error:", err);
+    res.status(500).json({
       success: false,
-      message: "District is required!",
+      message: "Search failed"
     });
   }
-
-})
+});
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

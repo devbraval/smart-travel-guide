@@ -1,0 +1,59 @@
+.search-container {
+    padding: 25px;
+    font-family: Arial, sans-serif;
+}
+
+.search-title {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #222;
+}
+
+.category-section {
+    margin-bottom: 40px;
+}
+
+.category-title {
+    font-size: 22px;
+    margin-bottom: 15px;
+    color: #444;
+    border-left: 5px solid #4CAF50;
+    padding-left: 10px;
+}
+
+.places-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.place-card {
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 14px;
+    background: #fff;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.place-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.place-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.loading-text {
+    padding: 25px;
+    font-size: 22px;
+}
+
+.no-results {
+    padding: 25px;
+    font-size: 22px;
+    color: #666;
+}

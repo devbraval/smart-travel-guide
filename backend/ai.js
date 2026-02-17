@@ -8,10 +8,27 @@ async function processWithAi(places) {
     return places.map(p => p.name);
   }
 
-  const simplified = places.slice(0, 50).map(p => ({
-    name: p.name,
-    category: getCategory(p.tags)
-  }));
+  const grouped = {};
+  for (const place of places) {
+    const categories = getCategory(place.tags);
+    if (!grouped[categories]) {
+      grouped[categories] = [];
+    }
+    grouped[categories].push(place);
+  }
+  const simplified = [];
+  for (const categories in grouped) {
+    const topPlaces = grouped[categories]
+      .slice(0, 11)
+      .map(p => ({
+        name: p.name,
+        categories,
+      }));
+
+    simplified.push(...topPlaces);
+
+  }
+
 
   const prompt = `
 You are a travel assistant.

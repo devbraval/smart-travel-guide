@@ -2,25 +2,29 @@ function normalize(str) {
     return str.toLowerCase().replace(/[^\w\s]/g, "").trim();
 }
 
-async function rankplaces(groups) {
+async function aiRankCategory(category, places, limit = 20) {
 
-    const categories = Object.entries(groups)
-        .map(([cat, places]) =>
-            `### ${cat}\n` +
-            places.slice(0, 50).map(p => p.name).join("\n")
-        ).join("\n\n");
+    if (!places || !places.length) return [];
+
+    const candidates = places.slice(0, 40);
+
+    const list = candidates.map((p, i) =>
+        `${i + 1}. ${p.name}`
+    ).join("\n");
 
     const prompt = `
-Select best famous places from each category.
+Select top ${limit} famous ${category} places.
+Return only names list.
 
-Return format:
-Category: place1, place2, place3
-
-${categories}
+${list}
 `;
 
-    try {
-        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
@@ -29,35 +33,52 @@ ${categories}
             body: JSON.stringify({
                 model: "llama-3.1-8b-instant",
                 messages: [{ role: "user", content: prompt }],
-                temperature: 0.2
-            })
-        });
+                temperature: 0.3
+            }),
+            signal: controller.signal
+        }
+    );
 
-        if (!res.ok) throw new Error();
-
-        const data = await res.json();
-        const text = data?.choices?.[0]?.message?.content || "";
-
-        const result = {};
-
-        text.split("\n").forEach(line => {
-            const [cat, rest] = line.split(":");
-            if (!rest) return;
-
-            const names = rest.split(",").map(s => normalize(s));
-            const original = groups[cat.trim()] || [];
-
-            result[cat.trim()] = original.filter(p =>
-                names.includes(normalize(p.name))
-            );
-        });
-
-        return Object.keys(result).length ? result : groups;
-
-    } catch {
-        console.log("AI unavailable → using default ranking");
-        return groups;
+    if (!res.ok) {
+        const t = await res.text();
+        console.log("AI ERROR:", t);
+        throw new Error("AI failed");
     }
+
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content || "";
+
+    const selected = text
+        .split("\n")
+        .map(x => x.replace(/^\d+[\).\s-]*/, "").trim())
+        .filter(Boolean);
+
+    const set = new Set(selected.map(x => normalize(x)));
+
+    return candidates.filter(p =>
+        set.has(normalize(p.name))
+    );
+}
+
+
+
+async function rankplaces(grouped) {
+
+    const entries = Object.entries(grouped);
+
+    const ranked = await Promise.all(
+        entries.map(async ([cat, places]) => {
+            try {
+                const r = await aiRankCategory(cat, places);
+                return [cat, r.length ? r : places.slice(0, 20)];
+            } catch {
+                console.log("AI failed → fallback ranking:", cat);
+                return [cat, places.slice(0, 20)];
+            }
+        })
+    );
+
+    return Object.fromEntries(ranked);
 }
 
 module.exports = { rankplaces };

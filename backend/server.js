@@ -10,7 +10,7 @@ require("./db");
 const User = require("./models/user");
 const sendOtp = require("./utils/sendOtp");
 const generateOtp = require("./utils/otp");
-
+const { distanceKm } = require("./utils/distance");
 const { runOverpass } = require("./overpass");
 const { reverseGeocode } = require("./utils/reverseGeocode");
 const { processWithAi } = require("./ai");
@@ -418,9 +418,16 @@ app.post("/search-district", async (req, res) => {
       });
     }
     const geo = await getGeoLocation(district);
-    const raw = await getPlaceFromOverpass(
-      geo.boundingbox
-    );
+    const raw = await getPlaceFromOverpass(geo.boundingbox);
+    const MAX_DISTANCE = 40;
+    const filtered = raw.filter(p => {
+      const lat = p.lat || p.center?.lat;
+      const lon = p.lon || p.center?.lon;
+      if (!lat || !lon) return false;
+
+      return distanceKm(geo.lat, geo.lng, lat, lon) <= MAX_DISTANCE;
+    });
+
     if (!raw.length) {
       return res.json({
         success: true,
@@ -429,7 +436,11 @@ app.post("/search-district", async (req, res) => {
       });
 
     }
-    const grouped = filterAndShortlist(raw, 200);
+    const grouped = filterAndShortlist(filtered, 200);
+    for (const [category, arr] of Object.entries(grouped)) {
+      console.log(category, " -> ", arr.length);
+      console.log(arr.map(p => p.name));
+    }
     const ranked = await rankplaces(grouped);
     res.json({
       success: true,

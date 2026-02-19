@@ -31,6 +31,7 @@ async function fetchTile(query) {
 }
 
 async function getPlaceFromOverpass(boundingbox) {
+
     const [south, north, west, east] = boundingbox.map(Number);
 
     const latStep = (north - south) / 2;
@@ -52,24 +53,30 @@ async function getPlaceFromOverpass(boundingbox) {
     let results = [];
 
     for (const [s, n, w, e] of tiles) {
+
         const box = `${s},${w},${n},${e}`;
 
         const query = `
-[out:json][timeout:40];
+[out:json][timeout:60];
 (
  node["tourism"](${box});
  node["amenity"](${box});
  node["leisure"](${box});
+ node["historic"](${box});
+ node["tourism"="attraction"](${box});
+
  way["tourism"](${box});
  way["amenity"](${box});
  way["leisure"](${box});
+ way["historic"](${box});
+ way["tourism"="attraction"](${box});
 );
 out center;
 `;
 
         const data = await fetchTile(query);
         results.push(...data);
-        await delay(300); // prevents rate limit
+        await delay(300);
     }
 
     // remove duplicates

@@ -11,19 +11,16 @@ const User = require("./models/user");
 const sendOtp = require("./utils/sendOtp");
 const generateOtp = require("./utils/otp");
 const { distanceKm } = require("./utils/distance");
-const { runOverpass } = require("./overpass");
-const { reverseGeocode } = require("./utils/reverseGeocode");
-const { processWithAi } = require("./ai");
-const { categorizePlaces } = require("./utils/categorizePlaces");
-
 const { getGeoLocation } = require("./utils/getGeoLocation");
 const { getPlaceFromOverpass } = require("./utils/getPlaceFromOverpass");
 const { filterAndShortlist } = require("./utils/filterAndShortlist");
 const { rankplaces } = require("./utils/aiRanker");
-
-
+const { filterPlaces } = require("./utils/filter");
 const port = process.env.PORT || 8080;
-
+const { runOverpass } = require("./utils/overpass");
+const { reverseGeocode } = require("./utils/reverseGeocode");
+const { processWithAi } = require("./utils/ai");
+const { categorizePlaces } = require("./utils/categorizePlaces");
 app.use(cors());
 app.use(express.json());
 
@@ -276,9 +273,15 @@ app.post("/reset-password", async (req, res) => {
   }
 });
 
+
 app.post("/api/nearby-places", async (req, res) => {
   try {
+    console.log("----- /api/nearby-places CALLED -----");
+    console.log("Request Body:", req.body);
+
     const { lat, lng } = req.body;
+
+    console.log("Parsed Coordinates:", { lat, lng });
 
     if (!lat || !lng) {
       return res.json({
@@ -407,26 +410,15 @@ app.post("/api/nearby-places", async (req, res) => {
     res.json({ success: false, message: "Failed to fetch nearby places" });
   }
 });
-
 app.post("/search-district", async (req, res) => {
   try {
     const { district } = req.body;
     if (!district || typeof district !== "string") {
-      return res.json({
-        success: false,
-        message: "District required",
-      });
+      return res.json({ success: false, message: "District required" });
     }
+
     const geo = await getGeoLocation(district);
     const raw = await getPlaceFromOverpass(geo.boundingbox);
-    const MAX_DISTANCE = 40;
-    const filtered = raw.filter(p => {
-      const lat = p.lat || p.center?.lat;
-      const lon = p.lon || p.center?.lon;
-      if (!lat || !lon) return false;
-
-      return distanceKm(geo.lat, geo.lng, lat, lon) <= MAX_DISTANCE;
-    });
 
     if (!raw.length) {
       return res.json({
@@ -434,20 +426,18 @@ app.post("/search-district", async (req, res) => {
         location: geo.display_name,
         results: {}
       });
+    }
 
-    }
-    const grouped = filterAndShortlist(filtered, 200);
-    for (const [category, arr] of Object.entries(grouped)) {
-      console.log(category, " -> ", arr.length);
-      console.log(arr.map(p => p.name));
-    }
+    const grouped = filterAndShortlist(raw, 400);
     const ranked = await rankplaces(grouped);
+
     res.json({
       success: true,
       location: geo.display_name,
       categories: Object.keys(ranked).length,
       results: ranked
     });
+
   } catch (err) {
     console.error("Search Error:", err);
     res.status(500).json({

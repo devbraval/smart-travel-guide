@@ -32,6 +32,8 @@ const getIconForCategory = (category) => {
   return map[category] || faMapMarkerAlt;
 };
 
+// ... (imports remain same)
+
 export default function Card() {
   const [categories, setCategories] = useState({});
   const [sourceInfo, setSourceInfo] = useState({ source: null, city: null });
@@ -70,14 +72,14 @@ export default function Card() {
     }, (error) => {
       console.error("Geolocation error:", error);
       setLoading(false);
+    }, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
     });
   }, []);
 
-  if (loading) return <div className="loading-container">Finding best places near you...</div>;
-
-  if (!categories || Object.keys(categories).length === 0) {
-    return <div className="loading-container">No places found nearby</div>;
-  }
+  if (loading) return <div className="loading-container">Finding best places...</div>;
 
   return (
     <div className="places-container">
@@ -90,25 +92,28 @@ export default function Card() {
         </div>
       )}
 
-      {Object.entries(categories).map(([category, places]) => (
-        <div key={category} className="category-section">
-          <div className="category-header">
-            <FontAwesomeIcon icon={getIconForCategory(category)} className="category-icon" />
-            <h2 className="category-title">{category}</h2>
-          </div>
+      {(!categories || Object.keys(categories).length === 0) ? (
+        <div className="no-results">No places found nearby.</div>
+      ) : (
+        Object.entries(categories).map(([category, places]) => (
+          <div key={category} className="category-section">
+            <div className="category-header">
+              <FontAwesomeIcon icon={getIconForCategory(category)} className="category-icon" />
+              <h2 className="category-title">{category}</h2>
+            </div>
 
-          <div className="places-grid">
-            {places.map((place, index) => (
-              <div key={index} className="place-card">
-                <div className="card-content">
-                  <h3 className="place-name">{place.name}</h3>
-                  <span className="place-tag">{category}</span>
+            <div className="places-grid">
+              {places.map((place, index) => (
+                <div key={index} className="place-card">
+                  <div className="card-content">
+                    <h3 className="place-name">{place.name}</h3>
+                    <span className="place-tag">{category}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        )))}
     </div>
   );
 }

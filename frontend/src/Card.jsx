@@ -32,7 +32,7 @@ const getIconForCategory = (category) => {
   return map[category] || faMapMarkerAlt;
 };
 
-// ... (imports remain same)
+
 
 export default function Card() {
   const [categories, setCategories] = useState({});

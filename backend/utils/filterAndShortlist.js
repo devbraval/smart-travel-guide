@@ -1,6 +1,5 @@
 const { getCategory } = require("./category");
 
-/* ❌ BLOCK unwanted places */
 function isBlocked(tags = {}) {
 
   if (tags.amenity === "hospital") return true;
@@ -15,7 +14,7 @@ function isBlocked(tags = {}) {
 }
 
 
-/* ✅ allow only travel-relevant places */
+
 function isUseful(tags = {}) {
 
   if (tags.tourism) return true;
@@ -37,11 +36,9 @@ function isUseful(tags = {}) {
 }
 
 
-/* ⭐ scoring engine */
 function score(tags = {}) {
   let s = 0;
 
-  /* tourist importance */
   if (tags.tourism) s += 60;
   if (tags.tourism === "attraction") s += 80;
   if (tags.tourism === "theme_park") s += 90;

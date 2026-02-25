@@ -38,7 +38,7 @@ export default function Login() {
       setMessage(data.message || "Login failed");
       return;
     }
-
+    localStorage.setItem("token",data.token);
     localStorage.setItem("otpEmail", email);
     localStorage.setItem("loginToken", data.loginToken);
     window.location.href="/otp";

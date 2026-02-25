@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from "react";
+import 'bootstrap/dist/css/bootstrap.min.css';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import "./Card.css";
 import {
   faUtensils,
   faTree,
@@ -33,87 +35,60 @@ const getIconForCategory = (category) => {
 };
 
 
-
 export default function Card() {
-  const [categories, setCategories] = useState({});
-  const [sourceInfo, setSourceInfo] = useState({ source: null, city: null });
-  const [loading, setLoading] = useState(true);
-  const hasFetched = useRef(false);
+  const [message,setMessage] = useState("");
+  const[loading,setLoading] = useState(true);
+  const[places,setPlaces]= useState([]);
+  useEffect(()=>{
 
-  useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      try {
-        const response = await fetch(
-          "http://localhost:8080/api/nearby-places",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ lat, lng }),
+    const fetchData = async()=>{
+      try{
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:8080/dashboard",{
+          method:"GET",
+          headers:{
+            "Content-Type":"application/json",
+            "Authorization":`Bearer ${token}`,
           }
-        );
-
+        });
         const data = await response.json();
-
-        if (data.source) {
-          setSourceInfo({ source: data.source, city: data.city });
+        console.log("Backend Data:", data);
+        if (!data.success) {
+          setMessage(data.message || "Fetching Data Failed");
+          return;
+        }else{
+          setPlaces(data.result);
         }
-        setCategories(data.categories || {});
-      } catch (error) {
-        console.error("Failed to fetch places:", error);
-      } finally {
-        setLoading(false);
-      }
-    }, (error) => {
-      console.error("Geolocation error:", error);
-      setLoading(false);
-    }, {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
-    });
-  }, []);
-
-  if (loading) return <div className="loading-container">Finding best places...</div>;
-
-  return (
-    <div className="places-container">
-      <h1 className="page-title">Best Places Near You</h1>
-
-      {sourceInfo.source === 'city' && (
-        <div className="location-notice">
-          <p>Could not find many places immediately around you.</p>
-          <p>Showing results for <strong>{sourceInfo.city || "your city"}</strong>.</p>
-        </div>
-      )}
-
-      {(!categories || Object.keys(categories).length === 0) ? (
-        <div className="no-results">No places found nearby.</div>
-      ) : (
-        Object.entries(categories).map(([category, places]) => (
-          <div key={category} className="category-section">
-            <div className="category-header">
-              <FontAwesomeIcon icon={getIconForCategory(category)} className="category-icon" />
-              <h2 className="category-title">{category}</h2>
+        }catch(err){
+          setMessage("Server Error");
+        }finally{
+          setLoading(false);
+        }
+  };
+  fetchData();
+},[])
+  if(loading) return <h2>loading....</h2>
+  if(message) return <h2>{message}</h2>
+  if(places.length === 0) return <h2>No place found</h2>
+  return(
+     <>
+     {
+      <div className="card-container">
+        {
+          places.map((place,index)=>(
+            <div className="card" style={{ width: "18rem" }} key={index}>
+              <img src={place.img} alt={place.name} 
+/>
+              <div className="card-body">
+                <h5 className="card-title">{place.name}</h5>
+                <p className="card-text">{place.state}</p>
+                <p className="rating">⭐ {place.rating}</p>
+              </div>
             </div>
-
-            <div className="places-grid">
-              {places.map((place, index) => (
-                <div key={index} className="place-card">
-                  <div className="card-content">
-                    <h3 className="place-name">{place.name}</h3>
-                    <span className="place-tag">{category}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )))}
-    </div>
-  );
+          ))
+        }
+      </div>
+     }
+     </>
+  )
 }

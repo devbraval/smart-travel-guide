@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 
+const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
@@ -20,8 +21,10 @@ const port = process.env.PORT || 8080;
 const { runOverpass } = require("./utils/overpass");
 const { reverseGeocode } = require("./utils/reverseGeocode");
 const { processWithAi } = require("./utils/ai");
+const auth = require("./middleware/auth");
 const { categorizePlaces } = require("./utils/categorizePlaces");
-app.use(cors());
+const Listings = require("./models/listings");
+ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -36,7 +39,13 @@ app.post("/signup", async (req, res) => {
     if (user && user.isVerified) {
       return res.json({ success: false, message: "User already exists" });
     }
-
+    const token = jwt.sign({
+      id:user.id,
+      email:user.email,
+    },
+    process.env.JWT_SECRET,
+    {expiresIn:process.env.JWT_EXPIRY},
+  );
     const otp = generateOtp();
     const hashedOtp = await bcrypt.hash(otp, 5);
 
@@ -84,7 +93,13 @@ app.post("/login", async (req, res) => {
     if (!isMatched) {
       return res.json({ success: false, message: "Wrong password" });
     }
-
+    const token = jwt.sign({
+      id:user.id,
+      email:user.email,
+    },
+    process.env.JWT_SECRET,
+    {expiresIn:process.env.JWT_EXPIRY},
+    );
     const otp = generateOtp();
     const hashedOtp = await bcrypt.hash(otp, 5);
 
@@ -103,6 +118,7 @@ app.post("/login", async (req, res) => {
       success: true,
       message: "OTP sent",
       loginToken: user.loginToken,
+      token,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -272,145 +288,38 @@ app.post("/reset-password", async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
-
-app.post("/api/nearby-places", async (req, res) => {
-  try {
-    console.log("----- /api/nearby-places CALLED -----");
-    console.log("Request Body:", req.body);
-
-    const { lat, lng } = req.body;
-
-    console.log("Parsed Coordinates:", { lat, lng });
-
-    if (!lat || !lng) {
-      return res.json({
-        success: false,
-        message: "Latitude and longitude are required",
-      });
-    }
-
-    let places = [];
-    let radius = 2000;
-    let source = "local";
-    let city = null;
-
-    // Search radii: 2km -> 5km -> 10km -> 15km -> 25km
-    while (places.length < 10 && radius <= 25000) {
-      console.log(`[DEBUG] Searching radius: ${radius}m...`);
-      const newPlaces = await runOverpass(lat, lng, radius);
-      console.log(`[DEBUG] Found ${newPlaces.length} places at ${radius}m`);
-
-      // If we significantly improve results, update places
-      if (newPlaces.length > places.length) places = newPlaces;
-
-      if (radius < 5000) radius = 5000;
-      else if (radius < 10000) radius = 10000;
-      else if (radius < 15000) radius = 15000;
-      else radius += 10000;
-    }
-
-    console.log(`[DEBUG] Final Local Search Result: ${places.length} places`);
-
-    // Helper to calculate distance
-    const getDistance = (lat1, lon1, lat2, lon2) => {
-      const R = 6371e3; // metres
-      const φ1 = lat1 * Math.PI / 180;
-      const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-        Math.cos(φ1) * Math.cos(φ2) *
-        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    };
-
-    // Correct coordinates for city fallback if needed
-    let searchLat = lat;
-    let searchLng = lng;
-
-    if (places.length < 5) {
-      console.log("[DEBUG] Few places found nearby, checking city fallback...");
-      const cityInfo = await reverseGeocode(lat, lng);
-      if (cityInfo?.lat && cityInfo?.lng) {
-        const cityPlaces = await runOverpass(cityInfo.lat, cityInfo.lng, 12000);
-        console.log(`[DEBUG] City Fallback Found: ${cityPlaces.length} places in ${cityInfo.city}`);
-
-        if (cityPlaces.length > places.length) {
-          places = cityPlaces;
-          source = "city";
-          city = cityInfo.city;
-          searchLat = cityInfo.lat; // Update search center
-          searchLng = cityInfo.lng;
-          console.log(`[DEBUG] Switched to city source: ${city}`);
-        }
-      }
-    }
-
-    // SORT BY DISTANCE
-    places = places.map(p => ({
-      ...p,
-      distance: getDistance(searchLat, searchLng, p.lat, p.lng)
-    })).sort((a, b) => a.distance - b.distance);
-
-    console.log("[DEBUG] Places sorted by distance. Closest:", places[0]?.name, Math.round(places[0]?.distance) + "m");
-
-    if (!places.length) {
-      return res.json({
-        success: true,
-        source,
-        city,
-        totalPlaces: 0,
-        categories: {},
-      });
-    }
-
-    const selectedNames = await processWithAi(places);
-
-    console.log(`Places found: ${places.length}, AI selected: ${Array.isArray(selectedNames) ? selectedNames.length : "ALL"}`);
-
-    let finalNames = selectedNames;
-    if (Array.isArray(selectedNames) && selectedNames.length < 3 && places.length >= 3) {
-      console.log("AI selected too few places, falling back to showing top 10 original places.");
-      finalNames = places.slice(0, 10).map(p => p.name);
-    }
-
-    let categorizedPlaces = categorizePlaces(
-      places,
-      Array.isArray(finalNames)
-        ? finalNames
-        : places.map((p) => p.name)
-    );
-
-
-    let totalCategorized = Object.values(categorizedPlaces).flat().length;
-
-    if (totalCategorized < 3 && places.length >= 3) {
-      console.log("Categorization dropped too many items. Forcefully adding raw places to 'Other'.");
-      if (!categorizedPlaces["Other"]) categorizedPlaces["Other"] = [];
-
-      const existingNames = new Set(Object.values(categorizedPlaces).flat().map(p => p.name));
-
-      places.slice(0, 15).forEach(p => {
-        if (!existingNames.has(p.name)) {
-          categorizedPlaces["Other"].push(p);
-        }
-      });
-    }
-
-    res.json({
-      success: true,
-      source,
-      city,
-      totalPlaces: places.length,
-      categories: categorizedPlaces,
+app.get("/dashboard",auth,async(req,res)=>{
+  try{
+    const places = await Listings.find({});
+    res.status(200).json({
+      success:true,
+      count:places.length,
+      result:places,
     });
-  } catch (err) {
-    res.json({ success: false, message: "Failed to fetch nearby places" });
+  }catch(err){
+    res.status(501).json({
+      success:false,
+      count:places.length,
+      error:err.message,
+    });
   }
+  
 });
-app.post("/search-district", async (req, res) => {
+app.get("/place/:id",auth,async(req,res)=>{
+  try{
+    const place = await Listings.findById(req.params.id);
+    res.status(200).json({
+      success:true,
+      result:place,
+    });
+  }catch(err){
+    res.json({
+      success:false,
+      error:err.message,
+    });
+  }
+})
+app.post("/search-district", auth,async (req, res) => {
   try {
     const { district } = req.body;
     if (!district || typeof district !== "string") {
@@ -446,6 +355,7 @@ app.post("/search-district", async (req, res) => {
     });
   }
 });
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

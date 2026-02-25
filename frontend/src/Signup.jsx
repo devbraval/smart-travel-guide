@@ -42,7 +42,7 @@ export default function Signup() {
       setMessage(data.message || "Signup failed");
       return;
     }
-
+    localStorage.setItem("token",token);
     localStorage.setItem("otpEmail", email);
     window.location.href = "/otp";
   };

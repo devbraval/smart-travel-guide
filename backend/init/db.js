@@ -7,7 +7,10 @@ const sampleData = [
   category: "temple",
   rating: 4.8,
   img: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Shree_Somnath_Temple.jpg",
-  tags: ["jyotirlinga","shiv-temple","religious","tourist-attraction"]
+  tags: ["jyotirlinga","shiv-temple","religious","tourist-attraction"],
+  isPublic:true,
+  lat:20.8880,
+  lng:70.4010,
 },
 {
   name: "Dwarkadhish Temple",
@@ -17,7 +20,10 @@ const sampleData = [
   category: "temple",
   rating: 4.9,
   img: "https://upload.wikimedia.org/wikipedia/commons/a/a2/Dwarkadheesh_temple.jpg",
-  tags: ["krishna-temple","char-dham","pilgrimage","historic"]
+  tags: ["krishna-temple","char-dham","pilgrimage","historic"],
+  isPublic:true,
+  lat:22.2442,
+  lng:68.9685,
 },
 {
   name: "Chamunda Mata Temple",
@@ -27,7 +33,10 @@ const sampleData = [
   category: "temple",
   rating: 4.7,
   img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Chotila_-_Chamunda_Devi_Temple%2C_Gujarat_-_India_%283417734864%29.jpg/1280px-Chotila_-_Chamunda_Devi_Temple%2C_Gujarat_-_India_%283417734864%29.jpg",
-  tags: ["shakti-peeth","hill-temple","pilgrimage","devi-temple"]
+  tags: ["shakti-peeth","hill-temple","pilgrimage","devi-temple"],
+  isPublic:true,
+  lat:22.4237,
+  lng:71.1965,
 },
 {
   name: "Nageshwar Jyotirlinga",
@@ -37,7 +46,10 @@ const sampleData = [
   category: "temple",
   rating: 4.8,
   img: "https://upload.wikimedia.org/wikipedia/commons/2/22/Nageshwar.JPG",
-  tags: ["jyotirlinga","shiv-temple","pilgrimage"]
+  tags: ["jyotirlinga","shiv-temple","pilgrimage"],
+  isPublic:true,
+  lat:22.3347,
+  lng:68.9810,
 },
 {
   name: "Kashtbhanjan Hanuman Temple",
@@ -47,7 +59,10 @@ const sampleData = [
   category: "temple",
   rating: 4.9,
   img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Kashtabhanjan_Dev_Hanuman_Temple%2C_Salangpur.jpg/1280px-Kashtabhanjan_Dev_Hanuman_Temple%2C_Salangpur.jpg",
-  tags: ["hanuman-temple","spiritual","pilgrimage"]
+  tags: ["hanuman-temple","spiritual","pilgrimage"],
+  isPublic:true,
+  lat:22.0245,
+  lng:71.6025,
 },
 {
   name: "Modhera Sun Temple",
@@ -57,7 +72,10 @@ const sampleData = [
   category: "historical",
   rating: 4.8,
   img: "https://upload.wikimedia.org/wikipedia/commons/1/1f/Sun_Temple%2C_Modhera_-_Guda_Mandap_02.jpg",
-  tags: ["sun-temple","heritage","architecture","historic"]
+  tags: ["sun-temple","heritage","architecture","historic"],
+  isPublic:true,
+  lat:23.5830,
+  lng:72.1331,
 },
 {
   name: "Ambaji Temple",
@@ -67,7 +85,10 @@ const sampleData = [
   category: "temple",
   rating: 4.9,
   img: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Ambaji_Temple_at_Night.jpg",
-  tags: ["shakti-peeth","devi-temple","pilgrimage"]
+  tags: ["shakti-peeth","devi-temple","pilgrimage"],
+  isPublic:true,
+  lat:24.3317,
+  lng:72.8546,
 },
 {
   name: "Mahakali Temple Pavagadh",
@@ -77,7 +98,10 @@ const sampleData = [
   category: "temple",
   rating: 4.8,
   img: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Pavagadh%2C_Kalika_Mata_Temple_%289840241633%29.jpg",
-  tags: ["hill-temple","shakti-peeth","pilgrimage"]
+  tags: ["hill-temple","shakti-peeth","pilgrimage"],
+  isPublic:true,
+  lat:22.4813,
+  lng:73.5331,
 },
 {
   name: "Rukmini Devi Temple",
@@ -87,7 +111,10 @@ const sampleData = [
   category: "temple",
   rating: 4.6,
   img: "https://upload.wikimedia.org/wikipedia/commons/b/b6/Rukmini_temple.JPG",
-  tags: ["rukmini","krishna","historic","temple"]
+  tags: ["rukmini","krishna","historic","temple"],
+  isPublic:true,
+  lat:22.2531,
+  lng:68.9742,
 },
 {
   name: "Palitana Temples",
@@ -97,7 +124,10 @@ const sampleData = [
   category: "jain-temple",
   rating: 4.9,
   img: "https://upload.wikimedia.org/wikipedia/commons/8/87/Palitana.jpg",
-  tags: ["jain-temple","pilgrimage","heritage","hill-temple"]
+  tags: ["jain-temple","pilgrimage","heritage","hill-temple"],
+  isPublic:true,
+  lat:21.5254,
+  lng:71.8270,
 },
 {
   name: "Shamlaji Temple",
@@ -107,7 +137,10 @@ const sampleData = [
   category: "temple",
   rating: 4.7,
   img: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Shamlaji_Temple2_%28cropped%29.jpg/500px-Shamlaji_Temple2_%28cropped%29.jpg",
-  tags: ["vishnu-temple","historic","pilgrimage"]
+  tags: ["vishnu-temple","historic","pilgrimage"],
+  isPublic:true,
+  lat:23.5430,
+  lng:73.3150,
 }
 ];
 

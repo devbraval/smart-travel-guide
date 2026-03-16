@@ -41,6 +41,23 @@ const listingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  userId:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"User",
+    index:true,
+  },
+  isPublic:{
+    type:Boolean,
+    default:false,
+  },
+  lat:{
+    type:Number,
+    required:true,
+  },
+  lng:{
+    type:Number,
+    required:true,
+  },
 
   tags: [String],
 

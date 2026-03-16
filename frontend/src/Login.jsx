@@ -41,6 +41,7 @@ export default function Login() {
     localStorage.setItem("token",data.token);
     localStorage.setItem("otpEmail", email);
     localStorage.setItem("loginToken", data.loginToken);
+    localStorage.setItem("userId",data.userId);
     window.location.href="/otp";
   };
 

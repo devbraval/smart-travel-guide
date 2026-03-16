@@ -1,18 +1,24 @@
-const transporter = require("../email");
+import transporter from "../email.js";
 
-async function sendOtp(email,otp) {
+const sendOtp = async (email, otp) => {
+  try {
     await transporter.sendMail({
-        from: `Smart Travel Guide <${process.env.EMAIL_USER}>`,
-        to:email,
-        subject:"Your Otp Code",
-        html:
-        `
-        <h2>OTP Verification </h2>
-        <p>Your OTP is: </p>
-        <h1 style="letter-spacing:4px">${otp}</h1>
-        <p>This OTP will expire in 5 minutes.</p>
-        `
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Your OTP Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>OTP Verification</h2>
+          <p>Your OTP is:</p>
+          <h1 style="letter-spacing: 4px;">${otp}</h1>
+          <p>This OTP will expire in 5 minutes.</p>
+        </div>
+      `,
     });
-}
+  } catch (error) {
+    console.log("Send OTP Error:", error.message);
+    throw error;
+  }
+};
 
-module.exports = sendOtp;
+export default sendOtp;

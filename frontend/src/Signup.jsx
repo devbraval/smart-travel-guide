@@ -44,6 +44,7 @@ export default function Signup() {
     }
     localStorage.setItem("token",token);
     localStorage.setItem("otpEmail", email);
+    localStorage.setItem("userId",data.userId);
     window.location.href = "/otp";
   };
 

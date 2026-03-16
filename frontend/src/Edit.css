@@ -1,0 +1,23 @@
+.add-form{
+    padding:40px 0;
+}
+
+.mb-3{
+    width:700px;
+    margin:auto;
+}
+
+.form-control{
+    width:100%;
+    margin-bottom:20px;
+}
+
+.form-label{
+    margin-bottom:8px;
+}
+
+.button-group{
+    display:flex;
+    gap:15px;
+    margin-top:10px;
+}

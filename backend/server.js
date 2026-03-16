@@ -1,30 +1,35 @@
-const express = require("express");
+import express from "express";
+import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
+import cors from "cors";
+import bcrypt from "bcrypt";
+import { v4 as uuidv4 } from "uuid";
+import mongoose from "mongoose";
+
+import "./db.js";
+
+import User from "./models/user.js";
+import sendOtp from "./utils/sendOtp.js";
+import generateOtp from "./utils/otp.js";
+import { distanceKm } from "./utils/distance.js";
+import { getGeoLocation } from "./utils/getGeoLocation.js";
+import { getPlaceFromOverpass } from "./utils/getPlaceFromOverpass.js";
+import { filterAndShortlist } from "./utils/filterAndShortlist.js";
+import { rankplaces } from "./utils/aiRanker.js";
+import { filterPlaces } from "./utils/filter.js";
+import { runOverpass } from "./utils/overpass.js";
+import { reverseGeocode } from "./utils/reverseGeocode.js";
+import { processWithAi } from "./utils/ai.js";
+import auth from "./middleware/auth.js";
+import { categorizePlaces } from "./utils/categorizePlaces.js";
+
+import Listings from "./models/listings.js";
+import Comment from "./models/comments.js";
+
+dotenv.config();
+
 const app = express();
-require("dotenv").config();
-
-const jwt = require("jsonwebtoken");
-const cors = require("cors");
-const bcrypt = require("bcrypt");
-const { v4: uuidv4 } = require("uuid");
-
-require("./db");
-const User = require("./models/user");
-const sendOtp = require("./utils/sendOtp");
-const generateOtp = require("./utils/otp");
-const { distanceKm } = require("./utils/distance");
-const { getGeoLocation } = require("./utils/getGeoLocation");
-const { getPlaceFromOverpass } = require("./utils/getPlaceFromOverpass");
-const { filterAndShortlist } = require("./utils/filterAndShortlist");
-const { rankplaces } = require("./utils/aiRanker");
-const { filterPlaces } = require("./utils/filter");
-const port = process.env.PORT || 8080;
-const { runOverpass } = require("./utils/overpass");
-const { reverseGeocode } = require("./utils/reverseGeocode");
-const { processWithAi } = require("./utils/ai");
-const auth = require("./middleware/auth");
-const { categorizePlaces } = require("./utils/categorizePlaces");
-const Listings = require("./models/listings");
- app.use(cors());
+const port = process.env.PORT || 8080; app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -67,7 +72,10 @@ app.post("/signup", async (req, res) => {
     await user.save();
     await sendOtp(email, otp);
 
-    res.json({ success: true, message: "OTP sent to email" });
+    res.json({ success: true, 
+      message: "OTP sent to email" ,
+      userId:user.id,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -119,6 +127,7 @@ app.post("/login", async (req, res) => {
       message: "OTP sent",
       loginToken: user.loginToken,
       token,
+      userId:user.id,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -290,7 +299,12 @@ app.post("/reset-password", async (req, res) => {
 });
 app.get("/dashboard",auth,async(req,res)=>{
   try{
-    const places = await Listings.find({});
+    const places = await Listings.find({
+      $or:[
+        {isPublic:true},
+        {userId:req.user.id},
+      ]
+    });
     res.status(200).json({
       success:true,
       count:places.length,
@@ -299,7 +313,6 @@ app.get("/dashboard",auth,async(req,res)=>{
   }catch(err){
     res.status(501).json({
       success:false,
-      count:places.length,
       error:err.message,
     });
   }
@@ -318,7 +331,169 @@ app.get("/place/:id",auth,async(req,res)=>{
       error:err.message,
     });
   }
-})
+});
+app.post("/add-place",auth,async(req,res)=>{
+  try{
+    const {name,description,state,district,category,rating,img,lat,lng} = req.body;
+    if(!name || !description || !state || !district || !category || !rating || !img || !lat || !lng) {
+  return res.status(400).json({
+    success:false,
+    message:"something went wrong",
+  });
+} 
+    const newListing = new Listings({
+      name,
+      description,
+      state,
+      district,
+      category,
+      rating,
+      img,
+      lat,
+      lng,
+      userId:req.user.id
+    }); 
+    await newListing.save();
+    res.status(200).json({
+      success:true,
+      listing:newListing,
+    });
+    }catch(err){
+      res.json({
+      success:false,
+      error:err.message,
+    });
+    }
+
+});
+app.get("/edit-place/:id",auth,async(req,res)=>{
+  try{
+    const place = await Listings.findOne({
+    _id:req.params.id,
+    userId:req.user.id,
+    });
+  if(!place){
+    return res.status(401).json({
+      success:false,
+      message:"Place not founded",
+    });
+  }
+  return res.status(200).json({
+    success:true,
+    message:"Place founded",
+    result:place,
+  });
+  }catch(err){
+    return res.status(401).json({
+      success:true,
+      message:"Server Error",
+    });
+  }
+});
+app.put("/edit-place/:id",auth,async(req,res)=>{
+  try{
+    const updatedPlace = await Listings.findOneAndUpdate(
+      {
+      userId:req.user.id,
+      _id:req.params.id,
+    },
+  req.body,
+  {new:true,runValidators:true},
+  );
+  if(!updatedPlace){
+    return res.status(501).json({
+      success:false,
+      message:"Not Authorized",
+    });
+  }
+  return res.status(201).json({
+    success:true,
+    result:updatedPlace,
+  });
+  }catch(err){
+    return res.status(501).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+app.delete("/delete-place/:id",auth,async(req,res)=>{
+  try{
+    const deletePlace = await Listings.findOneAndDelete({
+      _id:req.params.id,
+      userId:req.user.id,
+    });
+    if(!deletePlace){
+      return res.status(404).json({
+        success:false,
+        message:"Place not found and not authorized",
+      });
+      
+    }
+    return res.status(200).json({
+        success:true,
+        message:"Place Deleted Successfully",
+      });
+  }catch(err){
+    return res.status(501).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+app.post("/add-comments/:id",auth,async(req,res)=>{
+  try{
+    const {comment,rating} = req.body;
+    const placeId = req.params.id;
+    if(!placeId || !comment || !rating ){
+      return res.status(400).json({
+        success:false,
+        message:"Provide All the required data",
+      });
+    }
+    const user = await User.findById(req.user.id);
+    const newComment = new Comment({
+        placeId,
+        userId:req.user.id,
+        userName:user.name,
+        comment,
+        rating,
+      });
+      await newComment.save();
+      res.json({
+      success:true,
+      message:"Comment added successfully",
+      result:newComment,
+    });
+
+  }catch(err){
+    console.log(err);
+    return res.status(501).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+app.get("/get-comments/:id", async (req,res)=>{
+  try{
+
+    const comments = await Comment.find({
+      placeId:req.params.id
+    }).sort({createdAt:-1});
+
+    res.json({
+      success:true,
+      result:comments
+    });
+
+  }catch(err){
+    console.log(err);
+    res.status(500).json({
+      success:false,
+      message:"Server Error"
+    });
+  }
+});
 app.post("/search-district", auth,async (req, res) => {
   try {
     const { district } = req.body;

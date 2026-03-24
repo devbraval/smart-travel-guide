@@ -14,6 +14,7 @@ import Detail from "./Detail";
 import AddListing from "./AddListing";
 import Edit from "./Edit";
 import Comments from "./Comments";
+import EditComment from "./EditComment"
 function App() {
   return (
     <BrowserRouter>
@@ -34,9 +35,11 @@ function App() {
         <Route path="/add-place" element={<AddListing/>}/>
         <Route path="/edit-place/:id" element={<Edit/>}/>
         <Route path="/add-comments/:id" element={<Comments/>}/>
+        <Route path="/edit-comment/:id" element={<EditComment/>}/> 
       </Routes>
 
     </BrowserRouter>
+    
     
   );
 }

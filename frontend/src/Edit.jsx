@@ -1,131 +1,144 @@
-import { useState,useEffect } from "react";
-import { useNavigate,useParams } from "react-router-dom";
-export default function Edit(){
-    const {id} = useParams();
-    const navigate = useNavigate();
-    const [name,setName] = useState("");
-    const [description,setDescription] = useState("");
-    const [state,setState] = useState("");
-    const [district,setDistrict] = useState("");
-    const [category,setCategory] = useState("");
-    const [rating,setRating] = useState("");
-    const [img,setImg] = useState("");
-    const [lat,setLat] = useState("");
-    const [lng,setLng] = useState("");
-    const [message,setMessage] = useState("");
-    useEffect(()=>{
-        const fetchPlace = async()=>{
-            try{
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import "./Edit.css";
 
-        
-            const response = await fetch(`http://localhost:8080/edit-place/${id}`,{
-                method:"GET",
-                headers:{
-                    "Content-Type":"application/json",
-                    Authorization:`Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-            const data = await response.json();
-            if(data.success){
-                const place = data.result;
-                setName(place.name);
-                setDescription(place.description);
-                setState(place.state);
-                setDistrict(place.district);
-                setCategory(place.category);
-                setRating(place.rating);
-                setImg(place.img);
-                setLat(place.lat);
-                setLng(place.lng);
+export default function Edit() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState(""); // ✅ FIXED
+  const [state, setState] = useState("");
+  const [district, setDistrict] = useState("");
+  const [category, setCategory] = useState("");
+  const [rating, setRating] = useState("");
+  const [img, setImg] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const fetchPlace = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/edit-place/${id}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          const place = data.result;
+          setName(place.name);
+          setDescription(place.description);
+          setState(place.state);
+          setDistrict(place.district);
+          setCategory(place.category);
+          setRating(place.rating);
+          setImg(place.img);
+          setLat(place.lat);
+          setLng(place.lng);
         }
-        }catch(err){
-            setMessage("Error loading place");
-        }
-        }
-        fetchPlace();
-    },[id]);
-    const onSubmitClick = async(e)=>{
-        e.preventDefault();
-        try{
-            const response = await fetch(`http://localhost:8080/edit-place/${id}`,{
-                method:"PUT",
-                headers:{
-                    "Content-Type":"application/json",
-                    Authorization:`Bearer ${localStorage.getItem("token")}`,
-                },
-                body:JSON.stringify({
-                    name,
-                    description,
-                    state,
-                    district,
-                    category,
-                    rating,
-                    img,
-                    lat,
-                    lng,
-                }),
-            });
-            const data = await response.json();
-            if(data.success){
-                navigate(`/dashboard`);
-            }
-        }catch(err){
-            setMessage("Error In submiting the updated listing");
-        }
+      } catch (err) {
+        setMessage("Error loading place");
+      }
+    };
+
+    fetchPlace();
+  }, [id]);
+
+  const onSubmitClick = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch(`http://localhost:8080/edit-place/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          state,
+          district,
+          category,
+          rating,
+          img,
+          lat,
+          lng,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setMessage("Error submitting updated listing");
     }
-    return(
-        <div className="add-form">
-            <form className="mb-3" onSubmit={onSubmitClick}>
+  };
 
-                <h2>Enter the details to add new Place</h2>
+  return (
+    <div className="form-wrapper">
+      <form className="form-card" onSubmit={onSubmitClick}>
 
-                <label className="form-label">Name</label>
-                <input type="text" className="form-control" required onChange={(e)=>setName(e.target.value)} value={name}/>
+        <h2>Edit Place Details</h2>
 
-                <label className="form-label">Description</label>
-                <input type="text" className="form-control" required onChange={(e)=>setDescription(e.target.value)} value={description}/>
+        <label>Name</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
 
-                <label className="form-label">State</label>
-                <input type="text" className="form-control" required onChange={(e)=>setState(e.target.value)} value={state}/>
+        <label>Description</label>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} required />
 
-                <label className="form-label">District</label>
-                <input type="text" className="form-control" required onChange={(e)=>setDistrict(e.target.value)} value={district}/>
+        <label>State</label>
+        <input type="text" value={state} onChange={(e) => setState(e.target.value)} required />
 
-                <label className="form-label">Category</label>
-                <input type="text" className="form-control" required onChange={(e)=>setCategory(e.target.value)} value={category}/>
+        <label>District</label>
+        <input type="text" value={district} onChange={(e) => setDistrict(e.target.value)} required />
 
-                <label className="form-label">Rating</label>
-                <input type="number" className="form-control" required onChange={(e)=>setRating(e.target.value)} value={rating}/>
+        <label>Category</label>
+        <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} required />
 
-                <label className="form-label">Img Url</label>
-                <input type="url" className="form-control" required onChange={(e)=>setImg(e.target.value)} value={img}/>
+        <label>Rating</label>
+        <input type="number" value={rating} onChange={(e) => setRating(e.target.value)} required />
 
-                <label className="form-label">Latitude</label>
-                <input type="text" className="form-control" required onChange={(e)=>setLat(e.target.value)} value={lat}/>
+        <label>Image URL</label>
+        <input type="url" value={img} onChange={(e) => setImg(e.target.value)} required />
 
-                <label className="form-label">Longitude</label>
-                <input type="text" className="form-control" required onChange={(e)=>setLng(e.target.value)} value={lng}/>
+        <label>Latitude</label>
+        <input type="text" value={lat} onChange={(e) => setLat(e.target.value)} required />
 
-                <div className="button-group">
-                    <button type="submit" className="btn btn-primary">Update</button>
-                    <button type="reset" className="btn btn-secondary" onClick={
-                        ()=>{
-                            setName("");
-                            setDistrict("");
-                            setDescription("");
-                            setCategory("");
-                            setImg("");
-                            setLat("");
-                            setState("");
-                            setRating("");
-                            setLng("");
-                        }
-                    }>Clear</button>
-                    {message && <p className="mt-3 text-success">{message}</p>}
-                </div>
+        <label>Longitude</label>
+        <input type="text" value={lng} onChange={(e) => setLng(e.target.value)} required />
 
-            </form>
+        <div className="btn-group">
+          <button type="submit" className="primary-btn">Update</button>
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => {
+              setName("");
+              setDescription("");
+              setState("");
+              setDistrict("");
+              setCategory("");
+              setRating("");
+              setImg("");
+              setLat("");
+              setLng("");
+            }}
+          >
+            Clear
+          </button>
         </div>
-    )
-    
+
+        {message && <p className="message">{message}</p>}
+
+      </form>
+    </div>
+  );
 }

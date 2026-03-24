@@ -1,23 +1,82 @@
-.add-form{
-    padding:40px 0;
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
 }
 
-.mb-3{
-    width:700px;
-    margin:auto;
+.form-wrapper {
+  min-height: 100vh;
+  background: #f4f6f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
 }
 
-.form-control{
-    width:100%;
-    margin-bottom:20px;
+.form-card {
+  width: 100%;
+  max-width: 600px;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0px 8px 25px rgba(0,0,0,0.1);
 }
 
-.form-label{
-    margin-bottom:8px;
+.form-card h2 {
+  margin-bottom: 20px;
 }
 
-.button-group{
-    display:flex;
-    gap:15px;
-    margin-top:10px;
+.form-card label {
+  font-weight: 500;
+  margin-top: 10px;
+  display: block;
+}
+
+.form-card input,
+.form-card textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+textarea {
+  resize: none;
+  height: 80px;
+}
+
+/* BUTTONS */
+.btn-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.primary-btn {
+  flex: 1;
+  padding: 10px;
+  background: #0073ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.primary-btn:hover {
+  background: #0056cc;
+}
+
+.secondary-btn {
+  flex: 1;
+  padding: 10px;
+  background: #ccc;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* MESSAGE */
+.message {
+  margin-top: 10px;
+  color: green;
 }

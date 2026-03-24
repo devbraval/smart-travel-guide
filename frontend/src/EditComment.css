@@ -1,0 +1,58 @@
+/* Center the form */
+.add-form {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+/* Form box */
+.edit-form {
+    width: 400px;
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Heading */
+.edit-form h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Textarea */
+.form-control {
+    width: 100%;
+    height: 100px;
+    resize: none;
+}
+
+/* Stars */
+.rating-stars {
+    margin-top: 10px;
+}
+
+.star {
+    font-size: 28px;
+    cursor: pointer;
+    color: gray;
+    margin-right: 5px;
+}
+
+.star.active {
+    color: gold;
+}
+
+/* Buttons */
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Message */
+.message {
+    margin-top: 15px;
+    color: green;
+    text-align: center;
+}

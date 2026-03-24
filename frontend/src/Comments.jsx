@@ -1,15 +1,21 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import "./Comments.css";
+import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faEllipsisV
+} from "@fortawesome/free-solid-svg-icons";
 export default function Comments(){
 
 const [comments,setComments] = useState([]);
 const [comment,setComment] = useState("");
 const [rating,setRating] = useState(0);
 const [message,setMessage] = useState("");
-
+const userId = localStorage.getItem("userId");
+const [openMenu,setOpenMenu] = useState(null);
+const navigate = useNavigate();
 const token = localStorage.getItem("token");
 const { id } = useParams();
 
@@ -28,7 +34,7 @@ const fetchComments = async () => {
     }
 };
 
-useEffect(()=>{
+useEffect(()=>{ 
     fetchComments();
 },[id]);
 
@@ -39,7 +45,6 @@ const handleSubmit = async()=>{
     }
 
    try{
-
         const response = await fetch(`http://localhost:8080/add-comments/${id}`,{
             method:"POST",
             headers:{
@@ -68,6 +73,25 @@ const handleSubmit = async()=>{
         setMessage("Server error");
    }
 
+}
+const handleDelete = async(id)=>{
+  const token = localStorage.getItem("token");
+  try{
+    const response = await fetch(`http://localhost:8080/delete-comment/${id}`,{
+      method:"DELETE",
+      headers:{
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+    });
+    const data = await response.json();
+    if(data.success){
+      setComments((prev)=>prev.filter((p)=>p._id !== id));
+      setMessage("Deleted Successfully");
+    }
+  }catch(err){
+    setMessage("Error in Deleting the comment");
+  }
 }
 
 return(
@@ -117,7 +141,45 @@ Comment
       <div className="col-lg-4 col-md-6 mb-3" key={index}>
         <div className="card h-100">
           <div className="card-body">
+          {
+  c.userId.toString() === userId && (
+    <>
+      <div className="commet-menu">
+        <FontAwesomeIcon
+          icon={faEllipsisV}
+          style={{ color: "black" }}
+          className="menu-icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenMenu(openMenu === c._id ? null : c._id);
+          }}
+        />
+      </div>
 
+      {openMenu === c._id && (
+        <div className="dropdown-menu-custom">
+          <p
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/edit-comment/${c._id}`);
+            }}
+          >
+            Edit
+          </p>
+
+          <p
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(c._id);
+            }}
+          >
+            Delete
+          </p>
+        </div>
+      )}
+    </>
+  )
+}
             <h6>{c.userName}</h6>
 
             <p>{c.comment}</p>

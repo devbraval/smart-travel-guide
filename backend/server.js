@@ -44,13 +44,6 @@ app.post("/signup", async (req, res) => {
     if (user && user.isVerified) {
       return res.json({ success: false, message: "User already exists" });
     }
-    const token = jwt.sign({
-      id:user.id,
-      email:user.email,
-    },
-    process.env.JWT_SECRET,
-    {expiresIn:process.env.JWT_EXPIRY},
-  );
     const otp = generateOtp();
     const hashedOtp = await bcrypt.hash(otp, 5);
 
@@ -63,7 +56,13 @@ app.post("/signup", async (req, res) => {
         password: hashedPassword,
       });
     }
-
+    const token = jwt.sign({
+      id:user._id,
+      email:user.email,
+    },
+    process.env.JWT_SECRET,
+    {expiresIn:process.env.JWT_EXPIRY},
+  );
     user.otp = hashedOtp;
     user.otpExpiry = Date.now() + 5 * 60 * 1000;
     user.otpPurpose = "signup";
@@ -74,7 +73,8 @@ app.post("/signup", async (req, res) => {
 
     res.json({ success: true, 
       message: "OTP sent to email" ,
-      userId:user.id,
+      userId:user._id,
+      token:token,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -297,26 +297,35 @@ app.post("/reset-password", async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-app.get("/dashboard",auth,async(req,res)=>{
-  try{
-    const places = await Listings.find({
-      $or:[
-        {isPublic:true},
-        {userId:req.user.id},
+app.get("/dashboard", auth, async (req, res) => {
+  try {
+    const { sortBy } = req.query;
+
+    let query = {
+      $or: [
+        { isPublic: true },
+        { userId: req.user.id }
       ]
+    };
+
+    let sortOption = {};
+
+    if (sortBy === "rating") sortOption.rating = -1;
+    if (sortBy === "name") sortOption.name = 1;
+
+    const places = await Listings.find(query).sort(sortOption);
+
+    res.json({
+      success: true,
+      result: places
     });
-    res.status(200).json({
-      success:true,
-      count:places.length,
-      result:places,
-    });
-  }catch(err){
-    res.status(501).json({
-      success:false,
-      error:err.message,
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message
     });
   }
-  
 });
 app.get("/place/:id",auth,async(req,res)=>{
   try{
@@ -474,6 +483,7 @@ app.post("/add-comments/:id",auth,async(req,res)=>{
     });
   }
 });
+
 app.get("/get-comments/:id", async (req,res)=>{
   try{
 
@@ -494,6 +504,65 @@ app.get("/get-comments/:id", async (req,res)=>{
     });
   }
 });
+app.put("/edit-comment/:id",auth,async(req,res)=>{
+  try{
+    const {id} = req.params;
+    const userId = req.user._id;
+    const {comment,rating} = req.body;
+    const updatedComment = await Comment.findOneAndUpdate({ 
+      _id:id,
+      user:userId,
+    },{
+      comment,rating
+    },{
+      new:true,
+      runValidators: true,
+    });
+    if(!updatedComment){
+      return res.status(401).json({
+        success:false,
+        message:"Not authorized to update this comment",
+      });
+
+    }
+    return res.status(200).json({
+      success:true,
+      message:"Comment Updated Successfully",
+      data:updatedComment,
+    });
+  }catch(err){
+    res.status(501).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+app.delete("/delete-comment/:id",auth,async(req,res)=>{
+  try{
+    const {id} = req.params;
+    const userId = req.user._id;
+    const deletedComment = await Comment.findOneAndDelete({
+      _id:id,
+      user:userId,
+    });
+    if(!deletedComment){
+      return res.status(401).json({
+        success:false,
+        message:"Not authorized to delete the comment",
+      });
+    }
+    return res.status(200).json({
+      success:true,
+      message:"Comment Deleted Successfully",
+    });
+  }catch(err){
+    return res.status(500).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+
 app.post("/search-district", auth,async (req, res) => {
   try {
     const { district } = req.body;

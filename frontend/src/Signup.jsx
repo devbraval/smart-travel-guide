@@ -42,14 +42,18 @@ export default function Signup() {
       setMessage(data.message || "Signup failed");
       return;
     }
-    localStorage.setItem("token",token);
+
+    localStorage.setItem("token", data.token);
     localStorage.setItem("otpEmail", email);
-    localStorage.setItem("userId",data.userId);
+    localStorage.setItem("userId", data.userId);
+
     window.location.href = "/otp";
   };
 
   return (
     <div className="sign-up">
+      
+      {/* LEFT */}
       <div className="left-signup">
         <img src={logo} alt="logo" />
         <h1>Smart Travel Guide 🌍</h1>
@@ -59,74 +63,65 @@ export default function Signup() {
         </p>
       </div>
 
+      {/* RIGHT */}
       <div className="right-signup">
-        <div className="login-box">
+        <div className="signup-card">
+
           <h2>Welcome 👋</h2>
           <p className="subtitle">Signup to continue planning your journey</p>
 
-          <form className="login-form">
-            <div className="mb-3">
-              <label className="form-label">Name</label>
-              <input
-                type="text"
-                className="form-control"
-                onChange={(e) => setName(e.target.value)}
-              />
+          <form onSubmit={handleSignup}>
 
-              <label className="form-label mt-2">Email address</label>
-              <input
-                type="email"
-                className="form-control"
-                onChange={(e) => setEmail(e.target.value)}
-              />
+            <label>Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
 
-              <div className="form-text">
-                We'll never share your email with anyone else.
-              </div>
-            </div>
+            <label>Email address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-            <div className="mb-3">
-              <label className="form-label">Create Password</label>
-              <input
-                type={showPass ? "text" : "password"}
-                className="form-control"
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            <small className="form-text">
+              We'll never share your email with anyone else.
+            </small>
 
-              <label className="form-label mt-2">Confirm Password</label>
-              <input
-                type={showPass ? "text" : "password"}
-                className="form-control"
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
+            <label>Create Password</label>
+            <input
+              type={showPass ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
-            <div className="mb-3 form-check">
+            <label>Confirm Password</label>
+            <input
+              type={showPass ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+
+            <div className="show-pass">
               <FontAwesomeIcon
                 icon={showPass ? faEyeSlash : faEye}
-                className="icon"
                 onClick={togglePassword}
               />
-              <label className="form-check-label ms-2">
-                Show password
-              </label>
+              <span>Show password</span>
             </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary w-100"
-              onClick={handleSignup}
-              disabled={isDisabled}
-            >
-              Sign up
-            </button>
+            <button disabled={isDisabled}>Sign up</button>
 
-            <p className="text-danger mt-2">{message}</p>
+            {message && <p className="error">{message}</p>}
 
-            <p className="mt-3">
-              Already have an account?{" "}
-              <Link to="/login">Login</Link>
-            </p>
+            <div className="links">
+              <p>
+                Already have an account? <Link to="/login">Login</Link>
+              </p>
+            </div>
+
           </form>
         </div>
       </div>

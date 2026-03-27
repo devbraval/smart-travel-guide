@@ -39,14 +39,17 @@ export default function Dashboard() {
   }, [sortBy]);
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans animate-fade-in pb-10">
       <NavBar />
+      
+      {/* Main Content Area */}
+      <main className="flex-1 w-full max-w-[1600px] mx-auto">
+        {/* 🔥 FILTER */}
+        <Filter onChange={setSortBy} />
 
-      {/* 🔥 FILTER */}
-      <Filter onChange={setSortBy} />
-
-      {/* 🔥 CARDS */}
-      <Card places={places} setPlaces={setPlaces} />
+        {/* 🔥 CARDS */}
+        <Card places={places} setPlaces={setPlaces} />
+      </main>
     </div>
   );
 }

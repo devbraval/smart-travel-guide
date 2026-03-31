@@ -14,6 +14,9 @@ export default function Comments() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const { id } = useParams();
+  const user = JSON.parse(localStorage.getItem("user"));
+  const role = user?.role;
+  
 
   const fetchComments = async () => {
     try {
@@ -136,7 +139,7 @@ export default function Comments() {
             key={index} 
             className="group relative bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col h-full"
           >
-            {c.userId?.toString() === userId && (
+            {(c.userId?.toString() === userId || role === "admin") && (
               <div className="absolute top-4 right-4 z-10">
                 <button
                   className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-800 transition-colors"
@@ -149,6 +152,7 @@ export default function Comments() {
                 </button>
                 {openMenu === c._id && (
                   <div className="absolute right-0 top-10 w-32 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 overflow-hidden animate-fade-in z-20">
+                   {c.userId?.toString() === userId && (
                     <button
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors"
                       onClick={(e) => {
@@ -158,15 +162,19 @@ export default function Comments() {
                     >
                       Edit
                     </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(c._id);
-                      }}
-                    >
-                      Delete
-                    </button>
+                   )}
+                    {(c.userId?.toString() === userId || role === "admin") && (
+  <button
+    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+    onClick={(e) => {
+      e.stopPropagation();
+      handleDelete(c._id);
+    }}
+  >
+    Delete
+  </button>
+)}
+                   
                   </div>
                 )}
               </div>

@@ -36,6 +36,8 @@ export default function Card({ places, setPlaces }) {
   const [menuOpen, setMenuOpen] = useState(null);
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
+  const user = JSON.parse(localStorage.getItem("user"));
+  const role = user?.role;
 
   const handleDelete = async (id) => {
     const token = localStorage.getItem("token");
@@ -87,41 +89,50 @@ export default function Card({ places, setPlaces }) {
               </div>
 
               {/* Edit/Delete Menu */}
-              {place.userId === userId && (
-                <div className="absolute top-4 left-4 z-30">
-                  <button 
-                    className="p-2 w-9 h-9 flex items-center justify-center rounded-full bg-white/50 backdrop-blur-md text-gray-800 hover:bg-white transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuOpen(menuOpen === place._id ? null : place._id);
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faEllipsisV} className="text-sm" />
-                  </button>
-                  {menuOpen === place._id && (
-                    <div className="absolute top-10 left-0 w-32 bg-white rounded-xl shadow-lg border border-gray-100 py-2 overflow-hidden animate-fade-in z-50">
-                      <button 
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/edit-place/${place._id}`);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(place._id);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Edit/Delete Menu */}
+{(place.owner === userId || role === "admin") && (
+  <div className="absolute top-4 left-4 z-30">
+    <button 
+      className="p-2 w-9 h-9 flex items-center justify-center rounded-full bg-white/50 backdrop-blur-md text-gray-800 hover:bg-white transition-colors"
+      onClick={(e) => {
+        e.stopPropagation();
+        setMenuOpen(menuOpen === place._id ? null : place._id);
+      }}
+    >
+      <FontAwesomeIcon icon={faEllipsisV} className="text-sm" />
+    </button>
+
+    {menuOpen === place._id && (
+      <div className="absolute top-10 left-0 w-32 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+
+        {place.owner === userId && (
+          <button 
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/edit-place/${place._id}`);
+            }}
+          >
+            Edit
+          </button>
+        )}
+
+        {(place.owner === userId || role === "admin") && (
+          <button 
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(place._id);
+            }}
+          >
+            Delete
+          </button>
+        )}
+
+      </div>
+    )}
+  </div>
+)}
 
               {/* Hover "View Details" */}
               <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -152,13 +163,14 @@ export default function Card({ places, setPlaces }) {
         ))}
       </div>
 
-      <button 
-        className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 group"
-        onClick={() => navigate("/add-place")}
-        title="Add Place"
-      >
-        <FontAwesomeIcon icon={faCirclePlus} className="text-2xl group-hover:rotate-90 transition-transform duration-300" />
-      </button>
+      {(role === "user" || role === "provider") && (
+        <button 
+          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+          onClick={() => navigate("/add-place")}
+        >
+          <FontAwesomeIcon icon={faCirclePlus} className="text-lg" />
+        </button>
+      )};
     </div>
   );
 }

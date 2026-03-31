@@ -12,9 +12,11 @@ import SearchPage from "./SearchPlace";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Detail from "./Detail";
 import AddListing from "./AddListing";
+import AdminPanel from "./AdminPanel";
 import Edit from "./Edit";
 import Comments from "./Comments";
 import EditComment from "./EditComment"
+import UserStatus from "./userStatus";
 function App() {
   return (
     <BrowserRouter>
@@ -36,6 +38,8 @@ function App() {
         <Route path="/edit-place/:id" element={<Edit/>}/>
         <Route path="/add-comments/:id" element={<Comments/>}/>
         <Route path="/edit-comment/:id" element={<EditComment/>}/> 
+         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/user/status" element={<UserStatus />} />
       </Routes>
 
     </BrowserRouter>

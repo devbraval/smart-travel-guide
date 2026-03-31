@@ -1,9 +1,12 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Otp.css";
 import useCooldown from "../hooks/useCooldown";
 import Alert from "./Alert";
 
 export default function Otp() {
+  const navigate = useNavigate();
+
   const [otp, setOtp] = useState(new Array(6).fill(""));
   const inputRef = useRef([]);
   const [message, setMessage] = useState("");
@@ -51,30 +54,42 @@ export default function Otp() {
       return;
     }
 
-    const response = await fetch("http://localhost:8080/verify-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, otp: finalOtp, loginToken }),
-    });
+    try {
+      const response = await fetch("http://localhost:8080/verify-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, otp: finalOtp, loginToken })
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!data.success) {
-      setMessage(data.message || "OTP verification failed");
-      return;
+      if (!data.success) {
+        setMessage(data.message || "OTP verification failed");
+        return;
+      }
+
+      // ✅ Cleanup
+      localStorage.removeItem("otpEmail");
+      localStorage.removeItem("loginToken");
+
+      showAlert("success", "Login successful 🎉");
+
+      // ✅ Role-based redirect
+      const user = JSON.parse(localStorage.getItem("user"));
+
+      if (user?.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
+
+    } catch (err) {
+      showAlert("error", "Server error");
     }
-
-    localStorage.removeItem("otpEmail");
-    localStorage.removeItem("loginToken");
-
-    showAlert("success", "Login successful 🎉");
-
-    setTimeout(() => {
-      window.location.href = "/dashboard";
-    }, 1200);
   };
 
-  // ✅ FIX: send loginToken
   const handleResend = async () => {
     if (isDisabled) return;
 
@@ -84,8 +99,10 @@ export default function Otp() {
     try {
       const response = await fetch("http://localhost:8080/resend-otp", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, loginToken }),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, loginToken })
       });
 
       const data = await response.json();
@@ -100,6 +117,7 @@ export default function Otp() {
       startCooldown();
 
       showAlert("success", "OTP resent to your email");
+
     } catch {
       showAlert("error", "Server not reachable");
     }
@@ -116,7 +134,9 @@ export default function Otp() {
       <div className="otp-page">
         <div className="otp-card">
           <h2>Verify</h2>
-          <p className="subtitle">Your code will be sent to you via E-mail</p>
+          <p className="subtitle">
+            Your code will be sent to you via E-mail
+          </p>
 
           <div className="otp-input">
             {otp.map((digit, index) => (
@@ -146,7 +166,9 @@ export default function Otp() {
                 color: isDisabled ? "gray" : "#0d6efd",
               }}
             >
-              {isDisabled ? `Resend in ${cooldown}s` : "Request again"}
+              {isDisabled
+                ? `Resend in ${cooldown}s`
+                : "Request again"}
             </span>
           </p>
         </div>

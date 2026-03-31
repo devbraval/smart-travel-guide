@@ -1,77 +1,80 @@
 import { useState, useEffect } from "react";
 import "./SearchPlace.css";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams,useNavigate } from "react-router-dom";
+import Card from "./Card";
+
 
 export default function SearchPlace() {
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
-  const [message,setMessage] = useState("");
+  const [places, setPlaces] = useState([]);
+  const [message, setMessage] = useState("");
+
   const [params] = useSearchParams();
-  const district = params.get("district");
+  const token = localStorage.getItem("token");
+  const query = params.get("q")?.trim(); // 🔥 changed from district → q
 
-  useEffect(() => {
-    if (!district) {
-        setMessage("District is missing from the search query");
-        setLoading(false);
+useEffect(() => {
+  if (query === null) return; // 🔥 important fix
+
+  if (!query) {
+    setMessage("Search query is missing");
+    setLoading(false);
+    return;
+  }
+
+  console.log("QUERY:", query);
+
+  const load = async () => {
+    try {
+      const res = await fetch(
+  `http://localhost:8080/search?q=${query}`,
+  {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  }
+);
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setMessage(data.message || "Something went wrong");
+        setPlaces([]);
         return;
-    };
-
-    const load = async () => {
-      try {
-        const res = await fetch(
-          "http://localhost:8080/search-district",
-          {
-            method: "POST",
-            headers: { 
-              Authorization:`Bearer ${localStorage.getItem("token")}`,
-              "Content-Type": "application/json",
-             },
-            body: JSON.stringify({ district }),
-          }
-        );
-
-        const json = await res.json();
-        if(!res.ok){
-            setMessage(json.message || "Something went wrong");
-            setData(null);
-            return;
-        }
-        setData(json);
-      } catch (err) {
-       console.error(err);
-       setMessage("Network error. Please try again.");
-       setData(null);
-      } finally {
-        setLoading(false);
       }
-    };
 
-    load();
-  }, [district]);
+      setPlaces(data.result);
 
+    } catch (err) {
+      console.error(err);
+      setMessage("Network error. Please try again.");
+      setPlaces([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  load();
+}, [query]);
+
+  // 🔄 LOADING
   if (loading)
-    return <h2 className="loading-text">Searching best places...</h2>;
+    return <h2 className="loading-text">Searching places...</h2>;
 
-  if (!data?.results)
-    return <h2 className="no-results">No results found</h2>;
+  // ❌ ERROR / EMPTY
+  if (message)
+    return <h2 className="no-results">{message}</h2>;
 
-  return (
-    <div className="search-container">
-      <h1 className="search-title">{data.location}</h1>
+  if (places.length === 0)
+    return <h2 className="no-results">No places found</h2>;
 
-      {Object.entries(data.results).map(([category, places]) => (
-        <div key={category} className="category-section">
-          <h2 className="category-title">{category}</h2>
+  // ✅ RESULT UI
+// ✅ RESULT UI
+return (
+  <div className="search-container">
+    <h1 className="search-title">Results for "{query}"</h1>
 
-          <div className="places-grid">
-            {places.map((place) => (
-              <div key={place.id} className="place-card">
-                <div className="place-name">{place.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+    <Card places={places} setPlaces={setPlaces} />
+  </div>
+);
 }

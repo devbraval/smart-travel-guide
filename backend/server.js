@@ -21,10 +21,12 @@ import { runOverpass } from "./utils/overpass.js";
 import { reverseGeocode } from "./utils/reverseGeocode.js";
 import { processWithAi } from "./utils/ai.js";
 import auth from "./middleware/auth.js";
+import isAdmin from "./middleware/isAdmin.js";
 import { categorizePlaces } from "./utils/categorizePlaces.js";
-
+import sendEmail from "./utils/sendEmail.js";
 import Listings from "./models/listings.js";
 import Comment from "./models/comments.js";
+import user from "./models/user.js";
 
 dotenv.config();
 
@@ -57,12 +59,13 @@ app.post("/signup", async (req, res) => {
       });
     }
     const token = jwt.sign({
-      id:user._id,
-      email:user.email,
+      id: user._id,
+      email: user.email,
+      role:user.role,
     },
-    process.env.JWT_SECRET,
-    {expiresIn:process.env.JWT_EXPIRY},
-  );
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRY },
+    );
     user.otp = hashedOtp;
     user.otpExpiry = Date.now() + 5 * 60 * 1000;
     user.otpPurpose = "signup";
@@ -71,10 +74,12 @@ app.post("/signup", async (req, res) => {
     await user.save();
     await sendOtp(email, otp);
 
-    res.json({ success: true, 
-      message: "OTP sent to email" ,
-      userId:user._id,
-      token:token,
+    res.json({
+      success: true,
+      message: "OTP sent to email",
+      userId: user._id,
+      role: user.role,
+      token: token,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -102,11 +107,12 @@ app.post("/login", async (req, res) => {
       return res.json({ success: false, message: "Wrong password" });
     }
     const token = jwt.sign({
-      id:user.id,
-      email:user.email,
+      id: user._id,
+      email: user.email,
+      role:user.role,
     },
-    process.env.JWT_SECRET,
-    {expiresIn:process.env.JWT_EXPIRY},
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRY },
     );
     const otp = generateOtp();
     const hashedOtp = await bcrypt.hash(otp, 5);
@@ -127,7 +133,8 @@ app.post("/login", async (req, res) => {
       message: "OTP sent",
       loginToken: user.loginToken,
       token,
-      userId:user.id,
+      userId: user.id,
+      role:user.role,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -301,12 +308,7 @@ app.get("/dashboard", auth, async (req, res) => {
   try {
     const { sortBy } = req.query;
 
-    let query = {
-      $or: [
-        { isPublic: true },
-        { userId: req.user.id }
-      ]
-    };
+    let query = { status: "approved" };
 
     let sortOption = {};
 
@@ -327,29 +329,29 @@ app.get("/dashboard", auth, async (req, res) => {
     });
   }
 });
-app.get("/place/:id",auth,async(req,res)=>{
-  try{
+app.get("/place/:id", auth, async (req, res) => {
+  try {
     const place = await Listings.findById(req.params.id);
     res.status(200).json({
-      success:true,
-      result:place,
+      success: true,
+      result: place,
     });
-  }catch(err){
+  } catch (err) {
     res.json({
-      success:false,
-      error:err.message,
+      success: false,
+      error: err.message,
     });
   }
 });
-app.post("/add-place",auth,async(req,res)=>{
-  try{
-    const {name,description,state,district,category,rating,img,lat,lng} = req.body;
-    if(!name || !description || !state || !district || !category || !rating || !img || !lat || !lng) {
-  return res.status(400).json({
-    success:false,
-    message:"something went wrong",
-  });
-} 
+app.post("/add-place", auth, async (req, res) => {
+  try {
+    const { name, description, state, district, category, rating, img, lat, lng } = req.body;
+    if (!name || !description || !state || !district || !category || !rating || !img || !lat || !lng) {
+      return res.status(400).json({
+        success: false,
+        message: "something went wrong",
+      });
+    }
     const newListing = new Listings({
       name,
       description,
@@ -360,200 +362,330 @@ app.post("/add-place",auth,async(req,res)=>{
       img,
       lat,
       lng,
-      userId:req.user.id
-    }); 
+      owner: req.user.id,
+      status: "pending",
+      isUserAdded: true,
+    });
     await newListing.save();
     res.status(200).json({
-      success:true,
-      listing:newListing,
+      success: true,
+      listing: newListing,
     });
-    }catch(err){
-      res.json({
-      success:false,
-      error:err.message,
+  } catch (err) {
+    console.error("Add Place Error:", err);
+  if (err.code === 11000) {
+    return res.status(400).json({
+      success: false,
+      message: "Place already exists in this location",
     });
-    }
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: "Server Error",
+  });
+}
 
 });
-app.get("/edit-place/:id",auth,async(req,res)=>{
-  try{
+app.get("/edit-place/:id", auth, async (req, res) => {
+  try {
     const place = await Listings.findOne({
-    _id:req.params.id,
-    userId:req.user.id,
+      _id: req.params.id,
     });
-  if(!place){
-    return res.status(401).json({
-      success:false,
-      message:"Place not founded",
-    });
-  }
-  return res.status(200).json({
-    success:true,
-    message:"Place founded",
-    result:place,
-  });
-  }catch(err){
-    return res.status(401).json({
-      success:true,
-      message:"Server Error",
-    });
-  }
-});
-app.put("/edit-place/:id",auth,async(req,res)=>{
-  try{
-    const updatedPlace = await Listings.findOneAndUpdate(
-      {
-      userId:req.user.id,
-      _id:req.params.id,
-    },
-  req.body,
-  {new:true,runValidators:true},
-  );
-  if(!updatedPlace){
-    return res.status(501).json({
-      success:false,
-      message:"Not Authorized",
-    });
-  }
-  return res.status(201).json({
-    success:true,
-    result:updatedPlace,
-  });
-  }catch(err){
-    return res.status(501).json({
-      success:false,
-      message:"Server Error",
-    });
-  }
-});
-app.delete("/delete-place/:id",auth,async(req,res)=>{
-  try{
-    const deletePlace = await Listings.findOneAndDelete({
-      _id:req.params.id,
-      userId:req.user.id,
-    });
-    if(!deletePlace){
-      return res.status(404).json({
-        success:false,
-        message:"Place not found and not authorized",
+    if (!place) {
+      return res.status(401).json({
+        success: false,
+        message: "Place not founded",
       });
-      
     }
     return res.status(200).json({
-        success:true,
-        message:"Place Deleted Successfully",
-      });
-  }catch(err){
-    return res.status(501).json({
-      success:false,
-      message:"Server Error",
+      success: true,
+      message: "Place founded",
+      result: place,
+    });
+  } catch (err) {
+    return res.status(401).json({
+      success: true,
+      message: "Server Error",
     });
   }
 });
-app.post("/add-comments/:id",auth,async(req,res)=>{
-  try{
-    const {comment,rating} = req.body;
+app.put("/edit-place/:id", auth, async (req, res) => {
+  try {
+    const updatedPlace = await Listings.findOneAndUpdate(
+      {
+        owner: req.user.id,
+        _id: req.params.id,
+      },
+      req.body,
+      { new: true, runValidators: true },
+    );
+    if (!updatedPlace) {
+      return res.status(403).json({   
+        success: false,
+        message: "Not Authorized",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      result: updatedPlace,
+    });
+  } catch (err) {
+    return res.status(501).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
+app.delete("/delete-place/:id", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    let query = { _id: req.params.id };
+    if (req.user.role !== "admin") {
+      query.owner = new mongoose.Types.ObjectId(userId);
+    }
+    const deletePlace = await Listings.findOneAndDelete(query);
+    if (!deletePlace) {
+      return res.status(404).json({
+        success: false,
+        message: "Place not found and not authorized",
+      });
+
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Place Deleted Successfully",
+    });
+  } catch (err) {
+    return res.status(501).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
+app.post("/add-comments/:id", auth, async (req, res) => {
+  try {
+    const { comment, rating } = req.body;
     const placeId = req.params.id;
-    if(!placeId || !comment || !rating ){
+    if (!placeId || !comment || !rating) {
       return res.status(400).json({
-        success:false,
-        message:"Provide All the required data",
+        success: false,
+        message: "Provide All the required data",
       });
     }
     const user = await User.findById(req.user.id);
     const newComment = new Comment({
-        placeId,
-        userId:req.user.id,
-        userName:user.name,
-        comment,
-        rating,
-      });
-      await newComment.save();
-      res.json({
-      success:true,
-      message:"Comment added successfully",
-      result:newComment,
+      placeId,
+      userId: req.user.id,
+      userName: user.name,
+      comment,
+      rating,
+    });
+    await newComment.save();
+    res.json({
+      success: true,
+      message: "Comment added successfully",
+      result: newComment,
     });
 
-  }catch(err){
+  } catch (err) {
     console.log(err);
     return res.status(501).json({
-      success:false,
-      message:"Server Error",
+      success: false,
+      message: "Server Error",
     });
   }
 });
 
-app.get("/get-comments/:id", async (req,res)=>{
-  try{
+app.get("/get-comments/:id", async (req, res) => {
+  try {
 
     const comments = await Comment.find({
-      placeId:req.params.id
-    }).sort({createdAt:-1});
+      placeId: req.params.id
+    }).sort({ createdAt: -1 });
 
     res.json({
-      success:true,
-      result:comments
+      success: true,
+      result: comments
     });
 
-  }catch(err){
+  } catch (err) {
     console.log(err);
     res.status(500).json({
-      success:false,
-      message:"Server Error"
+      success: false,
+      message: "Server Error"
     });
   }
 });
-app.put("/edit-comment/:id",auth,async(req,res)=>{
-  try{
-    const {id} = req.params;
+app.put("/edit-comment/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
     const userId = req.user._id;
-    const {comment,rating} = req.body;
-    const updatedComment = await Comment.findOneAndUpdate({ 
-      _id:id,
-      user:userId,
-    },{
-      comment,rating
-    },{
-      new:true,
+    const { comment, rating } = req.body;
+    const updatedComment = await Comment.findOneAndUpdate({
+      _id: id,
+      user: userId,
+    }, {
+      comment, rating
+    }, {
+      new: true,
       runValidators: true,
     });
-    if(!updatedComment){
+    if (!updatedComment) {
       return res.status(401).json({
-        success:false,
-        message:"Not authorized to update this comment",
+        success: false,
+        message: "Not authorized to update this comment",
       });
 
     }
     return res.status(200).json({
-      success:true,
-      message:"Comment Updated Successfully",
-      data:updatedComment,
+      success: true,
+      message: "Comment Updated Successfully",
+      data: updatedComment,
     });
-  }catch(err){
+  } catch (err) {
     res.status(501).json({
-      success:false,
-      message:"Server Error",
+      success: false,
+      message: "Server Error",
     });
   }
 });
-app.delete("/delete-comment/:id",auth,async(req,res)=>{
-  try{
-    const {id} = req.params;
+app.delete("/delete-comment/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
     const userId = req.user._id;
     const deletedComment = await Comment.findOneAndDelete({
-      _id:id,
-      user:userId,
+      _id: id,
+      user: userId,
     });
-    if(!deletedComment){
+    if (!deletedComment) {
       return res.status(401).json({
+        success: false,
+        message: "Not authorized to delete the comment",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Comment Deleted Successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
+
+// app.post("/search-district", auth, async (req, res) => {
+//   try {
+//     const { district } = req.body;
+//     if (!district || typeof district !== "string") {
+//       return res.json({ success: false, message: "District required" });
+//     }
+
+//     const geo = await getGeoLocation(district);
+//     const raw = await getPlaceFromOverpass(geo.boundingbox);
+
+//     if (!raw.length) {
+//       return res.json({
+//         success: true,
+//         location: geo.display_name,
+//         results: {}
+//       });
+//     }
+
+//     const grouped = filterAndShortlist(raw, 400);
+//     const ranked = await rankplaces(grouped);
+
+//     res.json({
+//       success: true,
+//       location: geo.display_name,
+//       categories: Object.keys(ranked).length,
+//       results: ranked
+//     });
+
+//   } catch (err) {
+//     console.error("Search Error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Search failed"
+//     });
+//   }
+// });
+app.get("/search", auth, async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || typeof q !== "string") {
+      return res.json({
+        success: false,
+        message: "Query is required",
+      });
+    }
+
+    const query = q.trim().toLowerCase();
+
+    const places = await Listings.find({
+      status: "approved",
+      $or: [
+        { name: { $regex: query, $options: "i" } },
+        { district: { $regex: query, $options: "i" } },
+        { state: { $regex: query, $options: "i" } },
+      ],
+    }).limit(50);
+
+    res.json({
+      success: true,
+      result: places, // 🔥 FIXED KEY
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
+app.get("/suggestions", auth, async (req, res) => {
+  try{
+    const { q } = req.query;
+    if(!q || typeof q !== "string"){
+      return res.json({
         success:false,
-        message:"Not authorized to delete the comment",
+        message:"Query is required",
+      });
+
+  }
+  const filter = {status:"approved"};
+  const regex = new RegExp(q.trim(), "i");
+  const name = await Listings.distinct("name",{...filter, name:regex});
+  const district = await Listings.distinct("district",{...filter, district:regex});
+  const state = await Listings.distinct("state",{...filter, state:regex});
+  const suggestions = [...new Set([...name, ...district, ...state])].slice(0,15);
+  res.json({
+    success:true,
+    message:"Suggestions found",
+    results:suggestions,
+  });
+}catch(err){
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
+app.get("/user/status",auth,async(req,res)=>{
+  try{
+    const listings = await Listings.find({owner:req.user.id});
+    if(listings.length === 0){
+      return res.status(404).json({
+        success:false,
+        message:"No listings found",
       });
     }
     return res.status(200).json({
       success:true,
-      message:"Comment Deleted Successfully",
+      result:listings,
     });
   }catch(err){
     return res.status(500).json({
@@ -562,44 +694,253 @@ app.delete("/delete-comment/:id",auth,async(req,res)=>{
     });
   }
 });
+app.get("/admin/listings/pending",auth,isAdmin,async(req,res)=>{
+  try{
+    const listing = await Listings.find(
+      {status:"pending"},
+      {owner:{$exists:true,$ne:null}}
+    )
+    .populate("owner","name email");
+    return res.status(200).json({
+      success:true,
+      message:"Places are availble",
+      result:listing,
+    });
 
-app.post("/search-district", auth,async (req, res) => {
+  }catch(err){
+    return res.status(501).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+app.put("/admin/listing/:id/approve", auth, isAdmin, async (req, res) => {
   try {
-    const { district } = req.body;
-    if (!district || typeof district !== "string") {
-      return res.json({ success: false, message: "District required" });
-    }
+    const listing = await Listings.findById(req.params.id).populate("owner", "name email");
 
-    const geo = await getGeoLocation(district);
-    const raw = await getPlaceFromOverpass(geo.boundingbox);
-
-    if (!raw.length) {
+    if (!listing) {
       return res.json({
-        success: true,
-        location: geo.display_name,
-        results: {}
+        success: false,
+        message: "Listing not found",
       });
     }
 
-    const grouped = filterAndShortlist(raw, 400);
-    const ranked = await rankplaces(grouped);
+    const name = listing.name.trim().toLowerCase();
+    const district = listing.district.trim().toLowerCase();
+    const state = listing.state.trim().toLowerCase();
 
-    res.json({
+
+    const exactDuplicate = await Listings.findOne({
+      _id: { $ne: listing._id }, // exclude same listing
+      name: { $regex: `^${name}$`, $options: "i" },
+      district: { $regex: `^${district}$`, $options: "i" },
+      state: { $regex: `^${state}$`, $options: "i" },
+      status: "approved",
+    });
+
+    if (exactDuplicate) {
+      return res.status(400).json({
+        success: false,
+        message: "This place is already approved",
+        existing: exactDuplicate,
+      });
+    }
+
+    const similarPlaces = await Listings.find({
+      _id: { $ne: listing._id },
+      district: { $regex: district, $options: "i" },
+      state: { $regex: state, $options: "i" },
+      name: { $regex: name.split(" ")[0], $options: "i" }, // basic similarity
+      status: "approved",
+    }).limit(5);
+
+    listing.status = "approved";
+    listing.rejectionReason = "";
+    await listing.save();
+
+
+    if (listing.owner && listing.owner.email) {
+      await sendEmail({
+        to: listing.owner.email,
+        subject: "Your listing has been approved",
+        html: `<p>Hi ${listing.owner.name},</p><p>Your listing "${listing.name}" has been approved.</p>`,
+      });
+    }
+
+    return res.status(200).json({
       success: true,
-      location: geo.display_name,
-      categories: Object.keys(ranked).length,
-      results: ranked
+      message: "Place approved successfully",
+      result: listing,
+      warning: similarPlaces.length ? similarPlaces : null,
     });
 
   } catch (err) {
-    console.error("Search Error:", err);
-    res.status(500).json({
+    if (err.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Duplicate place already exists (DB level)",
+      });
+    }
+
+    return res.status(500).json({
       success: false,
-      message: "Search failed"
+      message: "Server Error",
+    });
+  }
+});
+app.put("/admin/listing/:id/reject",auth,isAdmin,async(req,res)=>{
+  try{
+    const {reason } = req.body;
+    const listing = await Listings.findById(req.params.id).populate("owner","name email");
+      if(!reason || reason.trim() === ""){
+        return res.status(400).json({
+          success:false,
+          message:"Rejection reason is required",
+        });
+      }
+    if(!listing){
+      return res.json({
+        success:false,
+        message:"Something went wrong",
+      });
+
+    }
+    console.log("owner:", listing.owner);
+    listing.status = "rejected";
+    listing.rejectionReason = reason;
+    await listing.save();
+    if(listing.owner && listing.owner.email){
+      await sendEmail({
+        to: listing.owner.email,
+        subject: "Your listing has been rejected",
+        html: `<p>Hi ${listing.owner.name},</p><p>Your listing "${listing.name}" has been rejected for the following reason:</p><p>${listing.rejectionReason}</p><p>Please make the necessary changes and resubmit.</p>`
+      });
+    }
+
+    return res.status(200).json({
+      success:true,
+      message:"Places rejected successfully",
+      result:listing,
+    });
+
+  }catch(err){
+    return res.status(500).json({
+      success:false,
+      message:"Server Error",
     });
   }
 });
 
+app.delete("/admin/listing/:id",auth,isAdmin,async(req,res)=>{
+  try{
+    const listing = await Listings.findById(req.params.id).populate("owner","name email");
+
+    if(!listing){
+      return res.status(401).json({
+        success:false,
+        message:"Listing not founded",
+      });
+    }
+    await Listings.findByIdAndDelete(req.params.id);
+    if(listing.owner && listing.owner.email){
+      await sendEmail({
+        to: listing.owner.email,
+        subject: "Your listing has been deleted",
+        html: `<p>Hi ${listing.owner.name},</p><p>Your listing "${listing.name}" has been deleted from our platform.</p><p>If you have any questions, please contact us.</p>`
+      });
+    }
+
+    res.json({
+      success: true,  
+      message: "Listing deleted"
+    });
+  }catch(err){
+    return res.status(500).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+app.put("/admin/listing/:id/edit",auth,isAdmin,async(req,res)=>{
+  try{
+    const listing = await Listings.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {new:true,runValidators:true},
+    );
+    if(!listing){
+      return res.status(401).json({
+        success:false,
+        message:"Listing not founded",
+      });
+    }
+    return res.status(200).json({
+      success:true,
+      message:"Place updated successfully",
+      result:listing,
+    });
+  }catch(err){
+    return res.status(500).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+app.get("/admin/listings/all",auth,isAdmin,async(req,res)=>{
+  try{
+    const listings = await Listings.find()
+    .populate("owner","name email");
+    res.status(200).json({
+      success:true,
+      result:listings,
+    });
+  }catch(err){
+    return res.status(500).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+app.get("/admin/users/all",auth,isAdmin,async(req,res)=>{
+  try{
+    const users = await User.find().select("-password -otp -LoginToken -resetToken -otpExpiry -loginTokenExpiry -resetTokenExpiry");
+    if(user.length === 0){
+      return res.status(404).json({
+        success:false,
+        message:"No users found",
+      });
+    }
+    return res.status(200).json({
+      success:true,
+      result:users,
+    });
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
+app.get("/admin/user/dashboard",auth,isAdmin,async(req,res)=>{
+  try{
+    const listings = await Listings.find();
+    if(listings.length === 0){
+      return res.status(404).json({
+        success:false,
+        message:"No listings found",
+      });
+    }
+    return res.status(200).json({
+      success:true,
+      result:listings,
+    });
+  }catch(err){
+    res.status(500).json({
+      success:false,
+      message:"Server Error",
+    });
+  }
+});
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

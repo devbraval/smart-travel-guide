@@ -3,11 +3,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import "./Login.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import useCooldown from "../hooks/useCooldown";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [showPass, setShowPass] = useState(false);
   const { isDisabled, startCooldown } = useCooldown(10);
 
@@ -24,27 +26,40 @@ export default function Login() {
     if (isDisabled) return;
     startCooldown();
 
-    const response = await fetch("http://localhost:8080/login", {
-      method: "POST",
-      headers: {
-        "Content-type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch("http://localhost:8080/login", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!data.success) {
-      setMessage(data.message || "Login failed");
-      return;
+      if (!data.success) {
+        setMessage(data.message || "Login failed");
+        return;
+      }
+
+      // ✅ Store everything properly
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("otpEmail", email);
+      localStorage.setItem("loginToken", data.loginToken);
+      localStorage.setItem("userId", data.userId);
+
+      // 🔥 IMPORTANT FIX
+      localStorage.setItem("user", JSON.stringify({
+        role: data.role,
+        email: email
+      }));
+
+      // ✅ Go to OTP page
+      navigate("/otp");
+
+    } catch (err) {
+      setMessage("Something went wrong");
     }
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("otpEmail", email);
-    localStorage.setItem("loginToken", data.loginToken);
-    localStorage.setItem("userId", data.userId);
-
-    window.location.href = "/otp";
   };
 
   return (

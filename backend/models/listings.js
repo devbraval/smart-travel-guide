@@ -11,7 +11,21 @@ const listingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  owner: {
 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+  rejectionReason: {
+    type: String,
+    default: ""
+  },
   state: {
     type: String,
     required: true,
@@ -41,22 +55,17 @@ const listingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  userId:{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"User",
-    index:true,
+  lat: {
+    type: Number,
+    required: true,
   },
-  isPublic:{
-    type:Boolean,
-    default:false,
+  lng: {
+    type: Number,
+    required: true,
   },
-  lat:{
-    type:Number,
-    required:true,
-  },
-  lng:{
-    type:Number,
-    required:true,
+  isUserAdded: {
+    type: Boolean,
+    default: false,
   },
 
   tags: [String],

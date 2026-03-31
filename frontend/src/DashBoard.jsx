@@ -6,7 +6,8 @@ import Filter from "./Filter";
 export default function Dashboard() {
   const [places, setPlaces] = useState([]);
   const [sortBy, setSortBy] = useState("");
-
+  const userPlace = places.filter((p)=>p.isUserAdded);
+  const defaultPlace = places.filter((p)=>!p.isUserAdded);
   const fetchPlaces = async (sort = "") => {
     try {
       const token = localStorage.getItem("token");
@@ -27,10 +28,18 @@ export default function Dashboard() {
       const data = await response.json();
 
       if (data.success) {
-        setPlaces(data.result);
+        // 🔥 Filter only approved listings for the user side
+        const approvedPlaces = data.result.filter(
+          (place) => place.status === "approved"
+        );
+        
+        console.log("Total fetched listings:", data.result.length); // DEBUG
+        console.log("Approved listings showed to user:", approvedPlaces.length); // DEBUG
+        
+        setPlaces(approvedPlaces);
       }
     } catch (err) {
-      console.log("Error fetching places");
+      console.error("Error fetching places:", err);
     }
   };
 
@@ -47,8 +56,13 @@ export default function Dashboard() {
         {/* 🔥 FILTER */}
         <Filter onChange={setSortBy} />
 
-        {/* 🔥 CARDS */}
-        <Card places={places} setPlaces={setPlaces} />
+        {/* Default Places */}
+<h2 className="text-xl font-bold px-6 mt-6">Explore Places</h2>
+<Card places={defaultPlace} setPlaces={setPlaces} />
+
+{/* User Added Places */}
+<h2 className="text-xl font-bold px-6 mt-10">User Added Places</h2>
+<Card places={userPlace} setPlaces={setPlaces} />
       </main>
     </div>
   );

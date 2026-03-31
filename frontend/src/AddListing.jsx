@@ -38,6 +38,9 @@ export default function AddListing(){
             },
             );
             const data = await response.json();
+            if(!data.success){
+                return setMessage(data.message);
+            }
             if(data.success){
                 setMessage("Place Added Successfully ");
                 setTimeout(()=>{

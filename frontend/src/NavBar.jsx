@@ -161,8 +161,17 @@ const handleSearch = (value = query) => {
     >
       🚪 Logout
     </button>
+    {user.role !== "admin" && (
+      <button
+        onClick={() => navigate("/become-provider")}
+        className="w-full text-left px-4 py-2 hover:bg-blue-50 text-blue-600 transition-colors"
+      >
+        ⭐ Become Service Provider
+      </button>
+    )}
   </div>
 )}
+
           </>
         )}
       </div>

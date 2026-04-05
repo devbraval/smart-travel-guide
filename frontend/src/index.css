@@ -6,7 +6,11 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-800 antialiased font-sans;
+    @apply bg-slate-50 text-slate-900 antialiased font-sans;
+  }
+  ::selection {
+    background-color: theme('colors.primary.600');
+    color: white;
   }
 }
 

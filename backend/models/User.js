@@ -85,6 +85,57 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    providerStatus: {
+      type: String,
+      enum: ["none", "pending", "approved", "rejected"],
+      default: "none",
+    },
+    providerInfo: {
+      businessName: {
+        type: String,
+
+      },
+      contactNumber: {
+        type: String,
+
+      },
+
+      state: {
+        type: String,
+
+      },
+
+      district: {
+        type: String,
+
+      },
+
+      address: {
+        type: String,
+      },
+
+      propertyCount: {
+        type: Number,
+
+      },
+
+      description: {
+        type: String,
+      },
+      rejectionReason: {
+        type: String,
+      },
+
+      serviceType: {
+        type: String,
+        enum: ["hotel", "villa", "restaurant", "guide", "other"],
+
+      },
+    },
+    favorites: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Place",
+    }],
   },
   { timestamps: true }
 );

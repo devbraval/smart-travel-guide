@@ -55,6 +55,10 @@ const listingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  images: {
+    cover: { type: String, default: "" },
+    gallery: [{ type: String }],
+  },
   lat: {
     type: Number,
     required: true,
@@ -66,6 +70,19 @@ const listingSchema = new mongoose.Schema({
   isUserAdded: {
     type: Boolean,
     default: false,
+  },
+  price:{
+    amount: {
+      type: Number,
+    },
+    type: {
+      type: String,
+      enum: ["per_night", "per_person", "per_meal","per_day","per_hour","per_service"],
+    }
+    },
+    isBookable: {
+      type: Boolean,
+      default: false,
   },
 
   tags: [String],

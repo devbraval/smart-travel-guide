@@ -17,6 +17,8 @@ import Edit from "./Edit";
 import Comments from "./Comments";
 import EditComment from "./EditComment"
 import UserStatus from "./userStatus";
+import BecomeProvider from "./BecomeProvider";
+import ProviderDashboard from "./provider-dashboard/ProviderDashboard";
 function App() {
   return (
     <BrowserRouter>
@@ -40,6 +42,8 @@ function App() {
         <Route path="/edit-comment/:id" element={<EditComment/>}/> 
          <Route path="/admin" element={<AdminPanel />} />
         <Route path="/user/status" element={<UserStatus />} />
+        <Route path="/become-provider" element={<BecomeProvider />} />
+        <Route path="/provider-dashboard" element={<ProviderDashboard />} />
       </Routes>
 
     </BrowserRouter>

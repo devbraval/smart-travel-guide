@@ -6,18 +6,84 @@ import Filter from "./Filter";
 export default function Dashboard() {
   const [places, setPlaces] = useState([]);
   const [sortBy, setSortBy] = useState("");
-  const userPlace = places.filter((p)=>p.isUserAdded);
-  const defaultPlace = places.filter((p)=>!p.isUserAdded);
+  const [favorites, setFavorites] = useState([]);
+
+  // 🔥 Remove favorites from other sections
+  const excludeFavorites = (list) =>
+    list.filter((p) => !favorites.includes(p._id));
+
+  // 🎯 Categories
+  const hotels = excludeFavorites(
+    places.filter((p) => p.category?.toLowerCase() === "hotel")
+  );
+
+  const resorts = excludeFavorites(
+    places.filter((p) => p.category?.toLowerCase() === "resort")
+  );
+
+  const tourPackages = excludeFavorites(
+    places.filter((p) => p.category?.toLowerCase() === "tour package")
+  );
+
+  const cabServices = excludeFavorites(
+    places.filter((p) => p.category?.toLowerCase() === "cab service")
+  );
+
+  const pgs = excludeFavorites(
+    places.filter((p) => p.category?.toLowerCase() === "pg")
+  );
+
+  // Remaining
+  const remainingPlaces = places.filter((p) => {
+    const cat = p.category?.toLowerCase();
+    return !["hotel", "resort", "tour package", "cab service", "pg"].includes(cat);
+  });
+
+  const remainingUserAdded = excludeFavorites(
+    remainingPlaces.filter((p) => p.isUserAdded)
+  );
+
+  const remainingExplore = excludeFavorites(
+    remainingPlaces.filter((p) => !p.isUserAdded)
+  );
+  const favoritePlaces = places.filter((p) =>
+    favorites.includes(String(p._id))
+  );
+
+  const toggleFavorite = async (placeId) => {
+    // ⚡ instant UI update
+    setFavorites((prev) =>
+      prev.includes(placeId)
+        ? prev.filter((id) => id !== placeId)
+        : [...prev, placeId]
+    );
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:8080/toggle-favorite/${placeId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setFavorites(data.favorites.map(id => String(id))); // 🔥 sync with backend
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+    }
+  };
+
+  // 📦 Fetch data
   const fetchPlaces = async (sort = "") => {
     try {
       const token = localStorage.getItem("token");
 
       let url = "http://localhost:8080/dashboard";
-
-      // ✅ only add query when needed
-      if (sort) {
-        url += `?sortBy=${sort}`;
-      }
+      if (sort) url += `?sortBy=${sort}`;
 
       const response = await fetch(url, {
         headers: {
@@ -27,15 +93,23 @@ export default function Dashboard() {
 
       const data = await response.json();
 
+      // fetch favorites
+      const favResponse = await fetch("http://localhost:8080/favorites", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const favData = await favResponse.json();
+      if (favData.success) {
+        setFavorites(favData.favorites);
+      }
+
       if (data.success) {
-        // 🔥 Filter only approved listings for the user side
         const approvedPlaces = data.result.filter(
           (place) => place.status === "approved"
         );
-        
-        console.log("Total fetched listings:", data.result.length); // DEBUG
-        console.log("Approved listings showed to user:", approvedPlaces.length); // DEBUG
-        
+
         setPlaces(approvedPlaces);
       }
     } catch (err) {
@@ -50,19 +124,111 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans animate-fade-in pb-10">
       <NavBar />
-      
-      {/* Main Content Area */}
+
       <main className="flex-1 w-full max-w-[1600px] mx-auto">
         {/* 🔥 FILTER */}
         <Filter onChange={setSortBy} />
 
-        {/* Default Places */}
-<h2 className="text-xl font-bold px-6 mt-6">Explore Places</h2>
-<Card places={defaultPlace} setPlaces={setPlaces} />
+        {/* ❤️ FAVORITES FIRST */}
+        {favoritePlaces.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold px-6 mt-10 text-red-600">
+              Your Favorites ♥
+            </h2>
+            <Card
+              places={favoritePlaces}
+              setPlaces={setPlaces}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
+          </>
+        )}
 
-{/* User Added Places */}
-<h2 className="text-xl font-bold px-6 mt-10">User Added Places</h2>
-<Card places={userPlace} setPlaces={setPlaces} />
+        {resorts.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold px-6 mt-10">Premium Resorts</h2>
+            <Card
+              places={resorts}
+              setPlaces={setPlaces}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
+          </>
+        )}
+
+        {tourPackages.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold px-6 mt-10">Tour Packages</h2>
+            <Card
+              places={tourPackages}
+              setPlaces={setPlaces}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
+          </>
+        )}
+
+        {cabServices.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold px-6 mt-10">Cab Services</h2>
+            <Card
+              places={cabServices}
+              setPlaces={setPlaces}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
+          </>
+        )}
+
+        {pgs.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold px-6 mt-10">PGs & Hostels</h2>
+            <Card
+              places={pgs}
+              setPlaces={setPlaces}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
+          </>
+        )}
+
+        {remainingExplore.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold px-6 mt-10">Explore Places</h2>
+            <Card
+              places={remainingExplore}
+              setPlaces={setPlaces}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
+          </>
+        )}
+
+        {remainingUserAdded.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold px-6 mt-10">
+              Other User Added Places
+            </h2>
+            <Card
+              places={remainingUserAdded}
+              setPlaces={setPlaces}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
+          </>
+        )}
+
+        {hotels.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold px-6 mt-10">Stunning Hotels</h2>
+            <Card
+              places={hotels}
+              setPlaces={setPlaces}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
+          </>
+        )}
       </main>
     </div>
   );

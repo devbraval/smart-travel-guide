@@ -11,13 +11,19 @@ export default function AddListing(){
     const [district,setDistrict] = useState("");
     const [category,setCategory] = useState("");
     const [rating,setRating] = useState("");
-    const [img,setImg] = useState("");
+    const [images, setImages] = useState({ cover: "", gallery1: "", gallery2: "", gallery3: "", gallery4: "" });
     const [lat,setLat] = useState("");
     const [lng,setLng] = useState("");
     const [message,setMessage] = useState("");
+
     const onSubmit = async(e)=>{
         e.preventDefault();
         try{
+            const formattedImages = {
+                cover: images.cover,
+                gallery: [images.gallery1, images.gallery2, images.gallery3, images.gallery4].filter(Boolean)
+            };
+
             const response = await fetch("http://localhost:8080/add-place",{
                 method:"POST",
                 headers:{
@@ -31,12 +37,12 @@ export default function AddListing(){
                     district,
                     category,
                     rating,
-                    img,
+                    img: images.cover,
+                    images: formattedImages,
                     lat,
                     lng
                 }),
-            },
-            );
+            });
             const data = await response.json();
             if(!data.success){
                 return setMessage(data.message);
@@ -50,7 +56,7 @@ export default function AddListing(){
                 setDistrict("");
                 setDescription("");
                 setCategory("");
-                setImg("");
+                setImages({ cover: "", gallery1: "", gallery2: "", gallery3: "", gallery4: "" });
                 setLat("");
                 setState("");
                 setRating("");
@@ -60,7 +66,6 @@ export default function AddListing(){
             setMessage("Server error");
         }
     }
-    
 
     return(
         <div className="add-form">
@@ -84,10 +89,35 @@ export default function AddListing(){
                 <input type="text" className="form-control" required onChange={(e)=>setCategory(e.target.value)} value={category}/>
 
                 <label className="form-label">Rating</label>
-                <input type="number" className="form-control" required onChange={(e)=>setRating(e.target.value)} value={rating}/>
+                <input type="number" className="form-control" required max="5" min="0" step="0.1" onChange={(e)=>setRating(e.target.value)} value={rating}/>
 
-                <label className="form-label">Img Url</label>
-                <input type="url" className="form-control" required onChange={(e)=>setImg(e.target.value)} value={img}/>
+                <div className="mb-4 p-4 border rounded bg-light mt-3">
+                  <label className="form-label fw-bold">Images (Grid Layout)</label>
+                  <p className="text-muted small mb-3">Provide a cover image and up to 4 optional gallery images. Providing only the Cover Image falls back to the classic single banner style. Providing more enables the 5-Image Grid feature.</p>
+                  
+                  <div className="mb-3">
+                    <label className="form-label text-primary">Cover Image URL (Required)</label>
+                    <input type="url" className="form-control" onChange={(e) => setImages(prev => ({...prev, cover: e.target.value}))} value={images.cover} required />
+                  </div>
+                  <div className="row g-2">
+                    <div className="col-md-6">
+                      <label className="form-label text-secondary small">Gallery Image 1</label>
+                      <input type="url" className="form-control" onChange={(e) => setImages(prev => ({...prev, gallery1: e.target.value}))} value={images.gallery1} />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label text-secondary small">Gallery Image 2</label>
+                      <input type="url" className="form-control" onChange={(e) => setImages(prev => ({...prev, gallery2: e.target.value}))} value={images.gallery2} />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label text-secondary small">Gallery Image 3</label>
+                      <input type="url" className="form-control" onChange={(e) => setImages(prev => ({...prev, gallery3: e.target.value}))} value={images.gallery3} />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label text-secondary small">Gallery Image 4</label>
+                      <input type="url" className="form-control" onChange={(e) => setImages(prev => ({...prev, gallery4: e.target.value}))} value={images.gallery4} />
+                    </div>
+                  </div>
+                </div>
 
                 <label className="form-label">Latitude</label>
                 <input type="text" className="form-control" required onChange={(e)=>setLat(e.target.value)} value={lat}/>
@@ -95,22 +125,22 @@ export default function AddListing(){
                 <label className="form-label">Longitude</label>
                 <input type="text" className="form-control" required onChange={(e)=>setLng(e.target.value)} value={lng}/>
 
-                <div className="button-group">
-                    <button type="submit" className="btn btn-primary">Add</button>
+                <div className="button-group mt-4">
+                    <button type="submit" className="btn btn-primary">Add Place</button>
                     <button type="reset" className="btn btn-secondary" onClick={
                         ()=>{
                             setName("");
                             setDistrict("");
                             setDescription("");
                             setCategory("");
-                            setImg("");
+                            setImages({ cover: "", gallery1: "", gallery2: "", gallery3: "", gallery4: "" });
                             setLat("");
                             setState("");
                             setRating("");
                             setLng("");
                         }
-                    }>Clear</button>
-                    {message && <p className="mt-3 text-success">{message}</p>}
+                    }>Clear Form</button>
+                    {message && <p className="mt-3 text-success font-weight-bold">{message}</p>}
                 </div>
 
             </form>

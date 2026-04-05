@@ -1,8 +1,5 @@
-import "bootstrap/dist/css/bootstrap.min.css";
 import Alert from "./Alert";
-import logo from "./assets/newhdlogo.png";
 import { useState } from "react";
-import "./ResetPassword.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
@@ -81,43 +78,56 @@ export default function ResetPassword() {
         onClose={() => setAlert({ type: "", message: "" })}
       />
 
-      <div className="pass">
-        <div className="left-pass">
-          <img src={logo} alt="logo" />
-          <h1>Smart Travel Guide 🌍</h1>
-        </div>
-
-        <div className="right-pass">
-          <div className="pass-box">
-            <form className="pass-form" onSubmit={handleResetPassword}>
-              <input
-                type={showPassword ? "text" : "password"}
-                className="form-control mb-3"
-                placeholder="New password"
-                onChange={(e) => setPassword(e.target.value)}
-              />
-
-              <input
-                type={showPassword ? "text" : "password"}
-                className="form-control mb-3"
-                placeholder="Confirm password"
-                onChange={(e) => setConfirmPass(e.target.value)}
-              />
-
-              <div className="mb-3">
-                <FontAwesomeIcon
-                  icon={showPassword ? faEye : faEyeSlash}
-                  className="icon"
-                  onClick={togglePassword}
-                />
-                <span className="ms-2">Show password</span>
-              </div>
-
-              <button className="btn btn-primary w-100" disabled={loading}>
-                {loading ? "Updating..." : "Change Password"}
-              </button>
-            </form>
+      <div className="min-h-screen flex flex-col justify-center items-center bg-slate-50 font-sans p-6 animate-fade-in">
+        <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-3xl shadow-soft border border-slate-100 flex flex-col items-center text-center">
+          
+          <div className="w-16 h-16 bg-indigo-50 flex items-center justify-center rounded-full mb-6">
+            <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
           </div>
+
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Create New Password</h2>
+          <p className="text-slate-500 font-medium mb-8 text-sm leading-relaxed">
+            Your new password must be uniquely yours. Please type it completely twice.
+          </p>
+
+          <form className="w-full space-y-4" onSubmit={handleResetPassword}>
+            <div className="text-left space-y-1.5 relative">
+              <label className="text-sm font-semibold text-slate-700">New Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-500/15 focus:border-primary-500 bg-slate-50 focus:bg-white outline-none transition-all text-slate-900 shadow-sm"
+                />
+                <button 
+                  type="button" 
+                  onClick={togglePassword} 
+                  className="absolute inset-y-0 right-0 px-4 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors outline-none"
+                >
+                  <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+                </button>
+              </div>
+            </div>
+
+            <div className="text-left space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Confirm Password</label>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                onChange={(e) => setConfirmPass(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-primary-500/15 focus:border-primary-500 bg-slate-50 focus:bg-white outline-none transition-all text-slate-900 shadow-sm"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className={`w-full py-3.5 px-4 font-bold rounded-xl shadow-md transition-all mt-4 ${loading ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-lg hover:-translate-y-0.5 active:scale-95'}`}
+              disabled={loading}
+            >
+              {loading ? "Updating..." : "Update Password"}
+            </button>
+          </form>
         </div>
       </div>
     </>

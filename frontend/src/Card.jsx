@@ -14,8 +14,10 @@ import {
   faCirclePlus,
   faEllipsisV,
   faStar,
-  faHeart
+  faHeart as faHeartSolid
 } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
+
 
 const getIconForCategory = (category) => {
   const map = {
@@ -32,11 +34,12 @@ const getIconForCategory = (category) => {
   return map[category] || faMapMarkerAlt;
 };
 
-export default function Card({ places, setPlaces, favorites = [], onToggleFavorite }) {
+export default function Card({ places, setPlaces, onToggleFavorite }) {
   const [menuOpen, setMenuOpen] = useState(null);
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const user = JSON.parse(localStorage.getItem("user"));
+  const [loadingFav, setLoadingFav] = useState(false);
   const role = user?.role;
 
   const handleDelete = async (id) => {
@@ -68,7 +71,7 @@ export default function Card({ places, setPlaces, favorites = [], onToggleFavori
     <div className="px-4 sm:px-8 md:px-12 pb-12">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
         {places.map((place) => {
-          const isFavorite = favorites.includes(String(place._id));
+          const isFavorite = place.isFavorite || false;
 
           return (
             <div
@@ -85,7 +88,7 @@ export default function Card({ places, setPlaces, favorites = [], onToggleFavori
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-60 z-10" />
 
                 {/* Top Icons */}
-                <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+                <div className="absolute top-4 right-4 z-40 flex flex-col gap-2">
                   <button
                     className={`p-2 w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-md transition-all duration-300 ${isFavorite
                       ? "bg-white text-red-500 scale-110 shadow-md"
@@ -102,14 +105,14 @@ export default function Card({ places, setPlaces, favorites = [], onToggleFavori
                       }
                     }}
                   >
-                    <FontAwesomeIcon icon={faHeart} className="text-sm" />
+                    <FontAwesomeIcon icon={isFavorite ? faHeartSolid : faHeartRegular} className="text-sm" />
                   </button>
                 </div>
 
                 {/* Edit/Delete Menu */}
                 {/* Edit/Delete Menu */}
                 {(place.owner === userId || role === "admin") && (
-                  <div className="absolute top-4 left-4 z-30">
+                  <div className="absolute top-4 left-4 z-40">
                     <button
                       className="p-2 w-9 h-9 flex items-center justify-center rounded-full bg-white/50 backdrop-blur-md text-gray-800 hover:bg-white transition-colors"
                       onClick={(e) => {
@@ -153,7 +156,7 @@ export default function Card({ places, setPlaces, favorites = [], onToggleFavori
                 )}
 
                 {/* Hover "View Details" */}
-                <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                   <span className="px-5 py-2.5 bg-white/95 backdrop-blur-sm text-gray-900 text-sm font-semibold rounded-full shadow-[0_0_20px_rgba(0,0,0,0.2)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                     View Details
                   </span>

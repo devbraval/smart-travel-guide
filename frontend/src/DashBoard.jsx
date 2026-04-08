@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import NavBar from "./NavBar";
 import Card from "./Card";
 import Filter from "./Filter";
@@ -6,11 +7,10 @@ import Filter from "./Filter";
 export default function Dashboard() {
   const [places, setPlaces] = useState([]);
   const [sortBy, setSortBy] = useState("");
-  const [favorites, setFavorites] = useState([]);
 
-  // 🔥 Remove favorites from other sections
+  // 🔥 Remove favorites from other sections so they don't duplicate
   const excludeFavorites = (list) =>
-    list.filter((p) => !favorites.includes(p._id));
+    list.filter((p) => !p.isFavorite);
 
   // 🎯 Categories
   const hotels = excludeFavorites(
@@ -46,20 +46,19 @@ export default function Dashboard() {
   const remainingExplore = excludeFavorites(
     remainingPlaces.filter((p) => !p.isUserAdded)
   );
-  const favoritePlaces = places.filter((p) =>
-    favorites.includes(String(p._id))
-  );
+  const favoritePlaces = places.filter((p) => p.isFavorite);
+
+  const navigate = useNavigate();
 
   const toggleFavorite = async (placeId) => {
-    // ⚡ instant UI update
-    setFavorites((prev) =>
-      prev.includes(placeId)
-        ? prev.filter((id) => id !== placeId)
-        : [...prev, placeId]
-    );
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please log in to add favorites");
+      navigate("/login");
+      return;
+    }
 
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:8080/toggle-favorite/${placeId}`, {
         method: "POST",
         headers: {
@@ -70,7 +69,15 @@ export default function Dashboard() {
       const data = await res.json();
 
       if (data.success) {
-        setFavorites(data.favorites.map(id => String(id))); // 🔥 sync with backend
+        setPlaces(prev =>
+          prev.map(p =>
+            String(p._id) === String(placeId)
+              ? { ...p, isFavorite: !p.isFavorite }
+              : p
+          )
+        );
+      } else {
+        console.error("Backend error:", data.message);
       }
     } catch (err) {
       console.error("Error toggling favorite:", err);
@@ -93,22 +100,29 @@ export default function Dashboard() {
 
       const data = await response.json();
 
-      // fetch favorites
-      const favResponse = await fetch("http://localhost:8080/favorites", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const favData = await favResponse.json();
-      if (favData.success) {
-        setFavorites(favData.favorites);
+      // fetch favorites map
+      let favSet = new Set();
+      try {
+        const favResponse = await fetch("http://localhost:8080/favorites", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const favData = await favResponse.json();
+        if (favData.success) {
+          favSet = new Set(favData.favorites.map(id => String(id)));
+        }
+      } catch (err) {
+        console.error("Could not fetch favorites on load", err);
       }
 
       if (data.success) {
         const approvedPlaces = data.result.filter(
           (place) => place.status === "approved"
-        );
+        ).map(place => ({
+          ...place,
+          isFavorite: favSet.has(String(place._id))
+        }));
 
         setPlaces(approvedPlaces);
       }
@@ -138,7 +152,6 @@ export default function Dashboard() {
             <Card
               places={favoritePlaces}
               setPlaces={setPlaces}
-              favorites={favorites}
               onToggleFavorite={toggleFavorite}
             />
           </>
@@ -150,7 +163,6 @@ export default function Dashboard() {
             <Card
               places={resorts}
               setPlaces={setPlaces}
-              favorites={favorites}
               onToggleFavorite={toggleFavorite}
             />
           </>
@@ -162,7 +174,6 @@ export default function Dashboard() {
             <Card
               places={tourPackages}
               setPlaces={setPlaces}
-              favorites={favorites}
               onToggleFavorite={toggleFavorite}
             />
           </>
@@ -174,7 +185,6 @@ export default function Dashboard() {
             <Card
               places={cabServices}
               setPlaces={setPlaces}
-              favorites={favorites}
               onToggleFavorite={toggleFavorite}
             />
           </>
@@ -186,7 +196,6 @@ export default function Dashboard() {
             <Card
               places={pgs}
               setPlaces={setPlaces}
-              favorites={favorites}
               onToggleFavorite={toggleFavorite}
             />
           </>
@@ -198,7 +207,6 @@ export default function Dashboard() {
             <Card
               places={remainingExplore}
               setPlaces={setPlaces}
-              favorites={favorites}
               onToggleFavorite={toggleFavorite}
             />
           </>
@@ -212,7 +220,6 @@ export default function Dashboard() {
             <Card
               places={remainingUserAdded}
               setPlaces={setPlaces}
-              favorites={favorites}
               onToggleFavorite={toggleFavorite}
             />
           </>
@@ -224,7 +231,6 @@ export default function Dashboard() {
             <Card
               places={hotels}
               setPlaces={setPlaces}
-              favorites={favorites}
               onToggleFavorite={toggleFavorite}
             />
           </>

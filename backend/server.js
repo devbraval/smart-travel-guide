@@ -990,33 +990,6 @@ app.get("/admin/user/dashboard", auth, isAdmin, async (req, res) => {
     });
   }
 });
-app.post("/toggle-favorite/:id", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    const placeId = req.params.id;
-    if (!user.favorites) {
-      user.favorites = [];
-    }
-    if (user.favorites.includes(placeId)) {
-      user.favorites = user.favorites.filter((id) => id !== placeId);
-    } else {
-      user.favorites.push(placeId);
-    }
-    await user.save();
-    return res.json({ success: true, favorites: user.favorites });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Server Error" });
-  }
-});
-
-app.get("/favorites", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    return res.json({ success: true, favorites: user.favorites || [] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Server Error" });
-  }
-});
 
 app.post("/become-provider", auth, async (req, res) => {
   try {
@@ -1563,6 +1536,28 @@ app.put("/provider/profile", auth, async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error", error: err.message });
   }
 });
+
+app.get("/favorites", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      favorites: user.favorites.map(id => id.toString()) // 🔥 FIX HERE
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: err.message
+    });
+  }
+});
 app.post("/toggle-favorite/:id", auth, async (req, res) => {
   try {
     const placeId = req.params.id;
@@ -1574,25 +1569,29 @@ app.post("/toggle-favorite/:id", auth, async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    // ✅ ALWAYS convert to ObjectId
+    const objectId = new mongoose.Types.ObjectId(placeId);
+
     const isAlreadyFav = user.favorites.some(
       (id) => id.toString() === placeId
     );
 
     if (isAlreadyFav) {
-      // ❌ remove
+      // ✅ REMOVE correctly
       user.favorites = user.favorites.filter(
         (id) => id.toString() !== placeId
       );
     } else {
-      // ❤️ add
-      user.favorites.push(placeId);
+      // ✅ ADD correctly (as ObjectId, NOT string)
+      user.favorites.push(objectId);
     }
 
     await user.save();
 
     res.json({
       success: true,
-      favorites: user.favorites, // 🔥 IMPORTANT
+      favorites: user.favorites.map(id => id.toString()), // 🔥 normalize
+      isFavorite: !isAlreadyFav,
     });
 
   } catch (err) {
@@ -1603,7 +1602,6 @@ app.post("/toggle-favorite/:id", auth, async (req, res) => {
     });
   }
 });
-
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
-});
+}); // nodemon trigger

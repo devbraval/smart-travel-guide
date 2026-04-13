@@ -1408,6 +1408,34 @@ app.get("/admin/places/approved", auth, isAdmin, async (req, res) => {
     })
   }
 });
+
+app.put("/provider/service/:id", auth, async (req, res) => {
+  try {
+    const updatedPlace = await Place.findOneAndUpdate(
+      { _id: req.params.id, provider: req.user.id },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!updatedPlace) {
+      return res.status(404).json({ success: false, message: "Service not found or unauthorized" });
+    }
+    res.json({ success: true, message: "Service updated successfully", data: updatedPlace });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server Error", error: err.message });
+  }
+});
+
+app.delete("/provider/service/:id", auth, async (req, res) => {
+  try {
+    const place = await Place.findOneAndDelete({ _id: req.params.id, provider: req.user.id });
+    if (!place) {
+      return res.status(404).json({ success: false, message: "Service not found or unauthorized" });
+    }
+    res.json({ success: true, message: "Service deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server Error", error: err.message });
+  }
+});
 app.get("/admin/places/rejected", auth, isAdmin, async (req, res) => {
   try {
     const places = await Place.find({ status: "rejected" }).populate("provider", "name email");
@@ -1449,6 +1477,7 @@ app.post("/book", auth, async (req, res) => {
       amount: Number(amount),
       status: "confirmed"
     });
+
 
     await newBooking.save();
 

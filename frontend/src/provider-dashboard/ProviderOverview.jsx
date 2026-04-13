@@ -35,7 +35,7 @@ export default function ProviderOverview() {
     { label: 'Total Services', value: data.stats.servicesCount, icon: faBoxOpen, color: 'text-blue-500', bg: 'bg-blue-50' },
     { label: 'Total Bookings', value: data.stats.bookingsCount, icon: faCheckDouble, color: 'text-green-500', bg: 'bg-green-50' },
     { label: 'Earnings', value: `₹${data.stats.earnings.toLocaleString()}`, icon: faDollarSign, color: 'text-yellow-500', bg: 'bg-yellow-50' },
-    { label: 'Rating', value: data.stats.rating, icon: faStar, color: 'text-purple-500', bg: 'bg-purple-50' },
+
   ];
 
   if (loading) {
@@ -50,7 +50,7 @@ export default function ProviderOverview() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {statsVisuals.map((stat, idx) => (
           <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
             <div className={`w-14 h-14 rounded-full flex items-center justify-center ${stat.bg} ${stat.color}`}>
@@ -89,10 +89,9 @@ export default function ProviderOverview() {
                   <span className="text-sm text-gray-600 font-medium tracking-wide">
                     {new Date(booking.createdAt).toLocaleDateString()}
                   </span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                    booking.status === 'confirmed' ? 'bg-green-100 text-green-700' : 
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
                     booking.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-                  }`}>
+                    }`}>
                     {booking.status}
                   </span>
                 </div>

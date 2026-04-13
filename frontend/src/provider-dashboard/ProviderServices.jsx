@@ -6,6 +6,7 @@ import ProviderAddNewPlace from './ProviderAddNewPlace';
 
 export default function ProviderServices() {
   const [isAddingService, setIsAddingService] = useState(false);
+  const [editingService, setEditingService] = useState(null);
   const [services, setServices] = useState([]);
   const navigate = useNavigate();
 
@@ -29,8 +30,43 @@ export default function ProviderServices() {
     fetchingPlace();
   }, []);
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this service?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/provider/service/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setServices(services.filter(s => s._id !== id));
+      } else {
+        alert(data.message || "Failed to delete");
+      }
+    } catch (err) {
+      console.log(err);
+      alert("Error deleting service");
+    }
+  };
+
+  const handleEdit = (service) => {
+    setEditingService(service);
+    setIsAddingService(true);
+  };
+
+  const handleCancel = (shouldRefresh = false) => {
+    setIsAddingService(false);
+    setEditingService(null);
+    if (shouldRefresh) {
+      fetchingPlace();
+    }
+  };
+
   if (isAddingService) {
-    return <ProviderAddNewPlace onCancel={() => setIsAddingService(false)} />;
+    return <ProviderAddNewPlace onCancel={handleCancel} initialData={editingService} />;
   }
 
   const approvedServices = services.filter((service) => service.status === "approved");
@@ -75,11 +111,17 @@ export default function ProviderServices() {
                 <p className="text-gray-500 text-sm line-clamp-2 mb-4 flex-1">{service.description}</p>
 
                 <div className="flex items-center gap-3 pt-4 border-t border-gray-50 mt-auto">
-                  <button className="flex-1 flex items-center justify-center gap-2 py-2 border border-blue-100 text-blue-600 bg-blue-50/50 hover:bg-blue-50 rounded-xl font-medium transition-colors">
+                  <button 
+                    onClick={() => handleEdit(service)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 border border-blue-100 text-blue-600 bg-blue-50/50 hover:bg-blue-50 rounded-xl font-medium transition-colors"
+                  >
                     <FontAwesomeIcon icon={faEdit} className="text-sm" />
                     Edit
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 py-2 border border-red-100 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl font-medium transition-colors">
+                  <button 
+                    onClick={() => handleDelete(service._id)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 border border-red-100 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl font-medium transition-colors"
+                  >
                     <FontAwesomeIcon icon={faTrash} className="text-sm" />
                     Delete
                   </button>

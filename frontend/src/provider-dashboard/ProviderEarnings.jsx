@@ -16,20 +16,20 @@ export default function ProviderEarnings() {
           }
         });
         const data = await res.json();
-        
+
         if (data.success) {
           const validBookings = data.result.filter(b => b.status === "confirmed" || b.status === "Completed");
           const totalRevenue = validBookings.reduce((sum, b) => sum + b.amount, 0);
-          
+
           const mappedTxns = data.result.map(b => ({
-            id: b.bookingId ? b.bookingId.substring(0,8).toUpperCase() : b._id.substring(0,8),
+            id: b.bookingId ? b.bookingId.substring(0, 8).toUpperCase() : b._id.substring(0, 8),
             date: new Date(b.createdAt).toLocaleDateString(),
             description: `Payment for booking at ${b.listing?.name || 'Service'}`,
             amount: b.status === 'cancelled' ? `$0.00` : `+$${b.amount.toFixed(2)}`,
             status: b.status,
             rawAmount: b.amount
           }));
-          
+
           setEarnings(totalRevenue);
           setTransactions(mappedTxns);
         }
@@ -47,7 +47,7 @@ export default function ProviderEarnings() {
   }
 
   // Roughly simulate next payout logic
-  const nextPayout = earnings > 0 ? (earnings * 0.4).toFixed(2) : "0.00"; 
+  const nextPayout = earnings > 0 ? (earnings * 0.4).toFixed(2) : "0.00";
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -56,23 +56,17 @@ export default function ProviderEarnings() {
           <h1 className="text-3xl font-bold text-gray-800">Earnings</h1>
           <p className="text-gray-500 mt-1">Track your revenue and transaction history.</p>
         </div>
-        <button className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-5 py-2.5 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all w-full sm:w-auto">
-          <FontAwesomeIcon icon={faDownload} />
-          Export CSV
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
           <div className="relative z-10">
-             <div className="flex items-center gap-3 mb-2 opacity-80">
-               <FontAwesomeIcon icon={faWallet} className="text-xl" />
-               <h3 className="font-semibold text-lg">Available Balance</h3>
-             </div>
-             <h2 className="text-5xl font-bold mb-4">₹{earnings.toLocaleString()}</h2>
-             <button className="bg-white/20 hover:bg-white/30 text-white border border-white/30 px-6 py-2 rounded-xl font-medium transition-colors backdrop-blur-sm">
-               Withdraw Funds
-             </button>
+            <div className="flex items-center gap-3 mb-2 opacity-80">
+              <FontAwesomeIcon icon={faWallet} className="text-xl" />
+              <h3 className="font-semibold text-lg">Available Balance</h3>
+            </div>
+            <h2 className="text-5xl font-bold mb-4">₹{earnings.toLocaleString()}</h2>
+
           </div>
           {/* Decorative circles */}
           <div className="absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
@@ -80,12 +74,12 @@ export default function ProviderEarnings() {
         </div>
 
         <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm flex flex-col justify-center">
-            <div className="flex items-center gap-3 mb-2 text-gray-500">
-               <FontAwesomeIcon icon={faChartLine} className="text-xl" />
-               <h3 className="font-semibold text-lg">Expected Next Payout</h3>
-             </div>
-             <h2 className="text-4xl font-bold text-gray-800 mb-2">₹{Number(nextPayout).toLocaleString()}</h2>
-             <p className="text-sm text-gray-500 font-medium">Scheduled for end of period</p>
+          <div className="flex items-center gap-3 mb-2 text-gray-500">
+            <FontAwesomeIcon icon={faChartLine} className="text-xl" />
+            <h3 className="font-semibold text-lg">Expected Next Payout</h3>
+          </div>
+          <h2 className="text-4xl font-bold text-gray-800 mb-2">₹{Number(nextPayout).toLocaleString()}</h2>
+          <p className="text-sm text-gray-500 font-medium">Scheduled for end of period</p>
         </div>
       </div>
 

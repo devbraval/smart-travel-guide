@@ -61,11 +61,44 @@ const steps = [
   "Review",
 ];
 
-export default function MultiStepForm({ onCancel }) {
+export default function MultiStepForm({ onCancel, initialData }) {
   const [step, setStep] = useState(0);
 
-  const [form, setForm] = useState({
-    facilities: [],
+  const [form, setForm] = useState(() => {
+    if (initialData) {
+      return {
+        name: initialData.name || "",
+        category: initialData.category || "",
+        desc: initialData.description || "",
+        state: initialData.location?.state || "",
+        city: initialData.location?.city || "",
+        address: initialData.location?.address || "",
+        lat: initialData.location?.lat || "",
+        lng: initialData.location?.lng || "",
+        price: initialData.pricing?.price || "",
+        discountPrice: initialData.pricing?.discountPrice || "",
+        taxesIncluded: initialData.pricing?.taxesIncluded ? "Yes" : "No",
+        rooms: initialData.details?.rooms || "",
+        roomTypes: initialData.details?.roomTypes?.join(",") || "",
+        maxGuests: initialData.details?.maxGuests || "",
+        vehicle: initialData.details?.vehicleType || "",
+        priceKm: initialData.details?.pricePerKm || "",
+        driver: initialData.details?.driverIncluded ? "Yes" : "No",
+        duration: initialData.details?.durationDays || "",
+        includes: initialData.details?.includes?.join(",") || "",
+        facilities: initialData.facilities || [],
+        cancellation: initialData.policies?.cancellation || "",
+        rules: initialData.policies?.houseRules || "",
+        contact: initialData.contact?.phone || "",
+        whatsapp: initialData.contact?.whatsapp || "",
+        coverImage: initialData.images?.cover || "",
+        gallery1: initialData.images?.gallery?.[0] || "",
+        gallery2: initialData.images?.gallery?.[1] || "",
+        gallery3: initialData.images?.gallery?.[2] || "",
+        gallery4: initialData.images?.gallery?.[3] || "",
+      };
+    }
+    return { facilities: [] };
   });
 
   const handleChange = (field, value) => {
@@ -140,11 +173,16 @@ export default function MultiStepForm({ onCancel }) {
         },
       };
 
-      const res = await fetch("http://localhost:8080/provider/add/place", {
-        method: "POST",
+      const url = initialData 
+        ? `http://localhost:8080/provider/service/${initialData._id}` 
+        : "http://localhost:8080/provider/add/place";
+      const method = initialData ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, 
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formattedData),
       });
@@ -152,8 +190,8 @@ export default function MultiStepForm({ onCancel }) {
       const data = await res.json();
 
       if (data.success) {
-        alert("Service added successfully 🚀");
-        if (onCancel) onCancel();
+        alert(`Service ${initialData ? 'updated' : 'added'} successfully 🚀`);
+        if (onCancel) onCancel(true); // pass true to indicate success
       } else {
         alert("Failed: " + data.message);
       }
@@ -245,7 +283,7 @@ export default function MultiStepForm({ onCancel }) {
             const galleryImages = [form.gallery1, form.gallery2, form.gallery3, form.gallery4].filter(Boolean);
             const displayImages = [
               form.coverImage,
-               ...galleryImages
+              ...galleryImages
             ].filter(Boolean);
 
             return (
@@ -272,7 +310,7 @@ export default function MultiStepForm({ onCancel }) {
                           <div className="w-full h-full flex items-center justify-center text-gray-400">Cover</div>
                         )}
                       </div>
-                      
+
                       {/* Top Right */}
                       <div className="col-span-1 row-span-1 bg-gray-100">
                         {displayImages[1] ? (
@@ -319,7 +357,7 @@ export default function MultiStepForm({ onCancel }) {
           {/* Step 6 */}
           {step === 5 && (
             <div className="grid grid-cols-2 gap-3">
-              {["WiFi", "Parking", "AC", "Food", "Swimming Pool", "TV", "Power Backup"].map((f) => (
+              {["WiFi", "Parking", "AC", "Food", "Swimming Pool", "TV"].map((f) => (
                 <label key={f} className="flex items-center gap-2">
                   <input type="checkbox" checked={form.facilities.includes(f)} onChange={() => toggleFacility(f)} />
                   {f}
